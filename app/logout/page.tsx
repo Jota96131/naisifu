@@ -11,9 +11,7 @@ export default function Home() {
   return (
     <div style={{ maxWidth: 400, margin: "100px auto", padding: 20 }}>
       <h1>ナイシフ</h1>
-      <button onClick={handleLogout} style={{ padding: "8px 16px" }}>
-        ログアウト
-      </button>
+      <button onClick={handleLogout}>ログアウト</button>
     </div>
   );
 }
