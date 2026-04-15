@@ -39,7 +39,7 @@ export default function GirlsPage() {
 
     const { error } = await supabase
       .from("girls")
-      .insert({ name: name.trim() });
+      .insert({ name: name.trim(), store_id: "550e8400-e29b-41d4-a716-446655440000" });
 
     if (error) {
       console.error("登録エラー:", error.message);
@@ -69,7 +69,6 @@ export default function GirlsPage() {
           placeholder="名前を入力"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           className="flex-1 border border-gray-300 rounded px-3 py-2"
         />
         <button
@@ -80,12 +79,11 @@ export default function GirlsPage() {
         </button>
       </div>
 
-      {loading ? (
+      {loading ?
         <p className="text-gray-500">読み込み中...</p>
-      ) : girls.length === 0 ? (
+      : girls.length === 0 ?
         <p className="text-gray-500">まだ登録されていません</p>
-      ) : (
-        <ul className="space-y-2">
+      : <ul className="space-y-2">
           {girls.map((girl) => (
             <li
               key={girl.id}
@@ -101,7 +99,7 @@ export default function GirlsPage() {
             </li>
           ))}
         </ul>
-      )}
+      }
     </div>
   );
 }
