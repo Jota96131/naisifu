@@ -17,10 +17,22 @@ export default function StaffPage() {
   const [loading, setLoading] = useState(true); // 最初は読み込み中
 
   const fetchStaff = async () => {
-    // Supabaseからデータ取得
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: staffData } = await supabase
+      .from("staff")
+      .select("store_id")
+      .eq("email", user.email)
+      .single();
+    if (!staffData) return;
+
     const { data, error } = await supabase
       .from("staff")
       .select("*")
+      .eq("store_id", staffData.store_id)
       .order("created_at", { ascending: false });
     if (error) {
       console.error(error.message);
@@ -37,9 +49,21 @@ export default function StaffPage() {
   const handleAdd = async () => {
     // 登録処理
     if (!name.trim()) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: staffData } = await supabase
+      .from("staff")
+      .select("store_id")
+      .eq("email", user.email)
+      .single();
+    if (!staffData) return;
+
     const { error } = await supabase
       .from("staff")
-      .insert({ name: name.trim(), store_id: "550e8400-e29b-41d4-a716-446655440000" });
+      .insert({ name: name.trim(), store_id: staffData.store_id });
     if (error) {
       console.error(error.message);
       return;

@@ -15,11 +15,23 @@ export default function GirlsPage() {
   const [girls, setGirls] = useState<Girl[]>([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
-
   const fetchGirls = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: staffData } = await supabase
+      .from("staff")
+      .select("store_id")
+      .eq("email", user.email)
+      .single();
+    if (!staffData) return;
+
     const { data, error } = await supabase
       .from("girls")
       .select("*")
+      .eq("store_id", staffData.store_id)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -37,9 +49,22 @@ export default function GirlsPage() {
   const handleAdd = async () => {
     if (!name.trim()) return;
 
-    const { error } = await supabase
-      .from("girls")
-      .insert({ name: name.trim(), store_id: "550e8400-e29b-41d4-a716-446655440000" });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: staffData } = await supabase
+      .from("staff")
+      .select("store_id")
+      .eq("email", user.email)
+      .single();
+    if (!staffData) return;
+
+    const { error } = await supabase.from("girls").insert({
+      name: name.trim(),
+      store_id: staffData.store_id,
+    });
 
     if (error) {
       console.error("登録エラー:", error.message);
