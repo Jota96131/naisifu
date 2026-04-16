@@ -43,7 +43,36 @@ export default function GirlsPage() {
   };
 
   useEffect(() => {
-    fetchGirls();
+    let ignore = false;
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || ignore) return;
+
+      const { data: staffData } = await supabase
+        .from("staff")
+        .select("store_id")
+        .eq("email", user.email)
+        .single();
+      if (!staffData || ignore) return;
+
+      const { data, error } = await supabase
+        .from("girls")
+        .select("*")
+        .eq("store_id", staffData.store_id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("取得エラー:", error.message);
+        return;
+      }
+      if (!ignore) {
+        setGirls(data ?? []);
+        setLoading(false);
+      }
+    })();
+    return () => { ignore = true; };
   }, []);
 
   const handleAdd = async () => {
