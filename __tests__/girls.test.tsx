@@ -302,4 +302,177 @@ describe("女の子一覧ページ", () => {
     expect(screen.getByText("さくら")).toBeInTheDocument();
     expect(screen.getByText("ひなた")).toBeInTheDocument();
   });
+
+  // ⑪ エラーハンドリング：データ取得時のエラー
+  test("初期表示時にデータ取得エラーが発生した場合でもクラッシュしない", async () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "test@example.com" } },
+    });
+
+    mockFrom
+      .mockReturnValueOnce(mockStaffChain())
+      .mockReturnValueOnce({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            order: jest.fn().mockResolvedValue({
+              data: null,
+              error: { message: "データ取得エラー" },
+            }),
+          }),
+        }),
+      });
+
+    render(<GirlsPage />);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith("取得エラー:", "データ取得エラー");
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  // ⑫ エラーハンドリング：登録時のエラー
+  test("登録時にエラーが発生してもクラッシュしない", async () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    setupInitialMocks([{ id: "1", name: "さくら" }]);
+
+    render(<GirlsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("さくら")).toBeInTheDocument();
+    });
+
+    // 登録時のエラーをモック
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "test@example.com" } },
+    });
+    mockFrom
+      .mockReturnValueOnce(mockStaffChain())
+      .mockReturnValueOnce({
+        insert: jest.fn().mockResolvedValue({
+          error: { message: "登録エラー" }
+        }),
+      });
+
+    fireEvent.change(screen.getByPlaceholderText("名前を入力"), {
+      target: { value: "みさき" },
+    });
+    fireEvent.click(screen.getByText("登録"));
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith("登録エラー:", "登録エラー");
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  // ⑬ エラーハンドリング：削除時のエラー
+  test("削除時にエラーが発生してもクラッシュしない", async () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    setupInitialMocks([
+      { id: "1", name: "さくら" },
+      { id: "2", name: "ひなた" },
+    ]);
+
+    render(<GirlsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("さくら")).toBeInTheDocument();
+    });
+
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    // 削除時のエラーをモック
+    mockFrom.mockReturnValueOnce({
+      delete: jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({
+          error: { message: "削除エラー" }
+        }),
+      }),
+    });
+
+    const deleteButtons = screen.getAllByText("削除");
+    fireEvent.click(deleteButtons[0]);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith("削除エラー:", "削除エラー");
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  // ⑭ ローディング状態のテスト
+  test("データ読み込み中は「読み込み中...」が表示される", async () => {
+    // 初期表示時にローディング状態をキャッチするために遅延させる
+    mockGetUser.mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () => resolve({ data: { user: { email: "test@example.com" } } }),
+            100,
+          ),
+        ),
+    );
+
+    mockFrom
+      .mockReturnValueOnce(mockStaffChain())
+      .mockReturnValueOnce(mockGirlsSelectChain([]));
+
+    render(<GirlsPage />);
+
+    // ローディング中の表示を確認
+    expect(screen.getByText("読み込み中...")).toBeInTheDocument();
+
+    // データ読み込み完了を待つ
+    await waitFor(() => {
+      expect(screen.getByText("まだ登録されていません")).toBeInTheDocument();
+    });
+  });
+
+  // ⑮ エラーハンドリング：登録後のfetchGirlsでエラー
+  test("登録成功後のfetchGirlsでエラーが発生してもクラッシュしない", async () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    setupInitialMocks([{ id: "1", name: "さくら" }]);
+
+    render(<GirlsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("さくら")).toBeInTheDocument();
+    });
+
+    // 登録は成功するが、その後のfetchGirlsでエラーが発生
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "test@example.com" } },
+    });
+    mockFrom
+      .mockReturnValueOnce(mockStaffChain()) // handleAdd内のstaff取得
+      .mockReturnValueOnce(mockGirlsInsertChain()) // insert成功
+      .mockReturnValueOnce(mockStaffChain()) // fetchGirls内のstaff取得
+      .mockReturnValueOnce({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            order: jest.fn().mockResolvedValue({
+              data: null,
+              error: { message: "fetchGirlsエラー" },
+            }),
+          }),
+        }),
+      });
+
+    fireEvent.change(screen.getByPlaceholderText("名前を入力"), {
+      target: { value: "みさき" },
+    });
+    fireEvent.click(screen.getByText("登録"));
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith("取得エラー:", "fetchGirlsエラー");
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
 });
