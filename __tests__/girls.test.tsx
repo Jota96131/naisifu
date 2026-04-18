@@ -187,4 +187,48 @@ describe("女の子一覧ページ", () => {
       expect(screen.getByText("ひなた")).toBeInTheDocument();
     });
   });
+
+  // ⑦ フォームバリデーションテスト（空文字）
+  test("名前が空のまま登録ボタンを押してもinsertが呼ばれない", async () => {
+    setupInitialMocks([{ id: "1", name: "さくら" }]);
+
+    render(<GirlsPage />);
+
+    // まず一覧が表示されるのを待つ
+    await waitFor(() => {
+      expect(screen.getByText("さくら")).toBeInTheDocument();
+    });
+
+    // 初期表示の呼び出しをリセットして、ここから先を計測する
+    mockFrom.mockClear();
+
+    // 名前を入力せずに登録ボタンを押す
+    fireEvent.click(screen.getByText("登録"));
+
+    // handleAddが早期リターンするので、mockFromが追加で呼ばれない
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  // ⑧ フォームバリデーションテスト（スペースのみ）
+  test("スペースだけ入力して登録ボタンを押してもinsertが呼ばれない", async () => {
+    setupInitialMocks([{ id: "1", name: "さくら" }]);
+
+    render(<GirlsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("さくら")).toBeInTheDocument();
+    });
+
+    // 初期表示の呼び出しをリセット
+    mockFrom.mockClear();
+
+    // スペースだけ入力して登録ボタンを押す
+    fireEvent.change(screen.getByPlaceholderText("名前を入力"), {
+      target: { value: "   " },
+    });
+    fireEvent.click(screen.getByText("登録"));
+
+    // handleAddが早期リターンするので、mockFromが追加で呼ばれない
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
 });

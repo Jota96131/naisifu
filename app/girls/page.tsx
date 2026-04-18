@@ -72,7 +72,9 @@ export default function GirlsPage() {
         setLoading(false);
       }
     })();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const handleAdd = async () => {
