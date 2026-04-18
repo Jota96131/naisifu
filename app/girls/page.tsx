@@ -106,6 +106,7 @@ export default function GirlsPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm("本当に削除しますか?")) return;
     const { error } = await supabase.from("girls").delete().eq("id", id);
 
     if (error) {
