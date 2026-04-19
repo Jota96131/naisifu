@@ -53,14 +53,16 @@ export default function ShiftNewPage() {
     // 【TODO 3】バリデーション（全部入力されているかチェック）
     if (!selectedGirlId || !scheduledDate || !scheduledTime) return;
     // 【TODO 4】supabase.from("shifts").insert() を使って登録
-    const { error } = await supabase
-      .from("shifts")
-      .insert({ id: 1, name: "Mordor" });
+    const { error } = await supabase.from("shifts").insert({
+      girl_id: selectedGirlId,
+      scheduled_date: scheduledDate,
+      scheduled_time: scheduledTime,
+    });
 
-    // 保存するデータ:
-    // - girl_id: selectedGirlId
-    // - scheduled_date: _____
-    // - scheduled_time: _____
+    if (error) {
+      console.error("登録エラー:", error.message);
+      return;
+    }
   };
 
   return (
