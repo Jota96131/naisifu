@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 type Girl = {
   id: string;
@@ -11,6 +12,7 @@ type Girl = {
 };
 
 export default function ShiftNewPage() {
+  const router = useRouter();
   // 【TODO 1】ここに必要なstateを追加してください
   const [girls, setGirls] = useState<Girl[]>([]);
   const [selectedGirlId, setSelectedGirlId] = useState("");
@@ -63,6 +65,7 @@ export default function ShiftNewPage() {
       console.error("登録エラー:", error.message);
       return;
     }
+    router.push("/shifts");
   };
 
   return (
