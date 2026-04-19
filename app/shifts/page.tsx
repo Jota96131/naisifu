@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 type Shift = {
@@ -15,6 +16,7 @@ type Shift = {
 };
 
 export default function ShiftsPage() {
+  const router = useRouter();
   // 【TODO 1】stateを追加してください
   // - シフト一覧を保存するstate
   // - 表示モード（"today" or "week"）を保存するstate
@@ -71,13 +73,14 @@ export default function ShiftsPage() {
     <div className="max-w-2xl mx-auto py-10 px-4">
       <h1 className="text-2xl font-bold mb-6">シフト一覧</h1>
 
+      {/* 改善2: ボタンを横幅いっぱいに */}
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setViewMode("today")}
           className={
             viewMode === "today" ?
-              "bg-blue-600 text-white px-4 py-2 rounded"
-            : "bg-gray-200 px-4 py-2 rounded"
+              "flex-1 bg-blue-600 text-white px-4 py-2 rounded"
+            : "flex-1 bg-gray-200 px-4 py-2 rounded"
           }
         >
           当日
@@ -86,30 +89,40 @@ export default function ShiftsPage() {
           onClick={() => setViewMode("week")}
           className={
             viewMode === "week" ?
-              "bg-blue-600 text-white px-4 py-2 rounded"
-            : "bg-gray-200 px-4 py-2 rounded"
+              "flex-1 bg-blue-600 text-white px-4 py-2 rounded"
+            : "flex-1 bg-gray-200 px-4 py-2 rounded"
           }
         >
           今週
         </button>
       </div>
 
-      {/* TODO 4: シフト一覧をカード形式で表示 */}
+      {/* 改善1: カード情報を横並びに */}
       {shifts.length === 0 ?
         <p className="text-gray-500">シフトはありません</p>
       : <div className="space-y-3">
           {shifts.map((shift) => (
             <div
               key={shift.id}
-              className="border border-gray-200 rounded-lg p-4 shadow-sm"
+              className="flex items-center justify-between border border-gray-200 rounded-lg p-4 shadow-sm"
             >
               <p className="font-bold text-lg">{shift.girls.name}</p>
-              <p className="text-gray-600">{shift.scheduled_date}</p>
-              <p className="text-gray-600">{shift.scheduled_time}</p>
+              <div className="text-right text-gray-600">
+                <p>{shift.scheduled_date}</p>
+                <p>{shift.scheduled_time}</p>
+              </div>
             </div>
           ))}
         </div>
       }
+
+      {/* 改善3: シフト登録への導線 */}
+      <button
+        onClick={() => router.push("/shifts/new")}
+        className="mt-6 w-full bg-green-600 text-white px-4 py-3 rounded hover:bg-green-700"
+      >
+        ＋ シフト登録
+      </button>
     </div>
   );
 }
