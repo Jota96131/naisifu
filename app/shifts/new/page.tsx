@@ -55,15 +55,25 @@ export default function ShiftNewPage() {
     // 【TODO 3】バリデーション（全部入力されているかチェック）
     if (!selectedGirlId || !scheduledDate || !scheduledTime) return;
     // 【TODO 4】supabase.from("shifts").insert() を使って登録
-    const { error } = await supabase.from("shifts").insert({
+    const { data: shiftData, error } = await supabase.from("shifts").insert({
       girl_id: selectedGirlId,
       scheduled_date: scheduledDate,
       scheduled_time: scheduledTime,
-    });
+    }).select().single();
 
     if (error) {
       console.error("登録エラー:", error.message);
       return;
+    }
+
+    // attendanceレコードも自動作成（ステータス: 未確認）
+    const { error: attendanceError } = await supabase.from("attendance").insert({
+      shift_id: shiftData.id,
+      status: "未確認",
+    });
+
+    if (attendanceError) {
+      console.error("出勤情報作成エラー:", attendanceError.message);
     }
     router.push("/shifts");
   };

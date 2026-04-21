@@ -13,6 +13,10 @@ type Shift = {
   girls: {
     name: string;
   };
+  attendance: {
+    id: string;
+    status: string;
+  }[];
 };
 
 export default function ShiftsPage() {
@@ -46,7 +50,7 @@ export default function ShiftsPage() {
 
       let query = supabase
         .from("shifts")
-        .select("*, girls(name)")
+        .select("*, girls(name), attendance(id, status)")
         .eq("girls.store_id", staffData.store_id);
 
       if (viewMode === "today") {
@@ -68,6 +72,28 @@ export default function ShiftsPage() {
     };
     fetchShifts();
   }, [viewMode]);
+
+  // ステータス更新処理
+  const updateStatus = async (attendanceId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from("attendance")
+      .update({ status: newStatus })
+      .eq("id", attendanceId);
+
+    if (error) {
+      console.error("ステータス更新エラー:", error.message);
+      return;
+    }
+    // 更新後にデータを再取得
+    setShifts((prev) =>
+      prev.map((shift) => ({
+        ...shift,
+        attendance: shift.attendance.map((a) =>
+          a.id === attendanceId ? { ...a, status: newStatus } : a
+        ),
+      }))
+    );
+  };
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
@@ -104,14 +130,41 @@ export default function ShiftsPage() {
           {shifts.map((shift) => (
             <div
               key={shift.id}
-              onClick={() => router.push(`/shifts/${shift.id}/edit`)}
-              className="flex items-center justify-between border border-gray-200 rounded-lg p-4 shadow-sm cursor-pointer hover:bg-gray-50"
+              className={`border rounded-lg p-4 shadow-sm ${
+                shift.attendance[0]?.status === "出勤" ? "border-green-400 bg-green-50"
+                : shift.attendance[0]?.status === "欠勤" ? "border-red-400 bg-red-50"
+                : "border-gray-200"
+              }`}
             >
-              <p className="font-bold text-lg">{shift.girls.name}</p>
-              <div className="text-right text-gray-600">
-                <p>{shift.scheduled_date}</p>
-                <p>{shift.scheduled_time}</p>
+              <div
+                onClick={() => router.push(`/shifts/${shift.id}/edit`)}
+                className="flex items-center justify-between cursor-pointer"
+              >
+                <p className="font-bold text-lg">{shift.girls.name}</p>
+                <div className="text-right text-gray-600">
+                  <p>{shift.scheduled_date}</p>
+                  <p>{shift.scheduled_time}</p>
+                </div>
               </div>
+              {shift.attendance[0] && (
+                <div className="flex gap-2 mt-3">
+                  {["未確認", "出勤", "欠勤"].map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => updateStatus(shift.attendance[0].id, status)}
+                      className={`flex-1 px-2 py-1 rounded text-sm ${
+                        shift.attendance[0].status === status
+                          ? status === "出勤" ? "bg-green-600 text-white"
+                            : status === "欠勤" ? "bg-red-600 text-white"
+                            : "bg-gray-600 text-white"
+                          : "bg-gray-200"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
