@@ -104,7 +104,8 @@ export default function ShiftsPage() {
           {shifts.map((shift) => (
             <div
               key={shift.id}
-              className="flex items-center justify-between border border-gray-200 rounded-lg p-4 shadow-sm"
+              onClick={() => router.push(`/shifts/${shift.id}/edit`)}
+              className="flex items-center justify-between border border-gray-200 rounded-lg p-4 shadow-sm cursor-pointer hover:bg-gray-50"
             >
               <p className="font-bold text-lg">{shift.girls.name}</p>
               <div className="text-right text-gray-600">
