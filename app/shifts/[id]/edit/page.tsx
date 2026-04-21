@@ -90,6 +90,11 @@ export default function ShiftEditPage() {
 
   const handleDelete = async () => {
     if (!window.confirm("本当に削除しますか?")) return;
+
+    // 先にattendanceを削除（shift_idで紐づいてるから）
+    await supabase.from("attendance").delete().eq("shift_id", id);
+
+    // その後にshiftsを削除
     const { error } = await supabase.from("shifts").delete().eq("id", id);
 
     if (error) {

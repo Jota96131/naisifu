@@ -95,17 +95,27 @@ export default function ShiftsPage() {
     );
   };
 
-  // 【穴埋め1】当日の欠勤人数を計算
+  // ステータス別の人数を計算
+  const attendanceCount = shifts.filter((shift) => shift.attendance[0]?.status === "出勤").length;
   const absentCount = shifts.filter((shift) => shift.attendance[0]?.status === "欠勤").length;
+  const pendingCount = shifts.filter((shift) => shift.attendance[0]?.status === "未確認").length;
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
       <h1 className="text-2xl font-bold mb-6">シフト一覧</h1>
 
-      {/* 【穴埋め2】欠勤人数を表示（absentCountが1以上の時だけ表示） */}
-      {absentCount > 0 && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded text-red-700">
-          本日の欠勤：{absentCount}名
+      {/* ステータス別の人数表示 */}
+      {shifts.length > 0 && (
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1 p-2 bg-green-100 border border-green-300 rounded text-green-700 text-center text-sm">
+            出勤 {attendanceCount}名
+          </div>
+          <div className="flex-1 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-center text-sm">
+            欠勤 {absentCount}名
+          </div>
+          <div className="flex-1 p-2 bg-gray-100 border border-gray-300 rounded text-gray-700 text-center text-sm">
+            未確認 {pendingCount}名
+          </div>
         </div>
       )}
 
