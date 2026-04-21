@@ -59,10 +59,14 @@ export default function ShiftsPage() {
         const weekLater = new Date();
         weekLater.setDate(weekLater.getDate() + 7);
         const weekLaterStr = weekLater.toISOString().split("T")[0];
-        query = query.gte("scheduled_date", today).lte("scheduled_date", weekLaterStr);
+        query = query
+          .gte("scheduled_date", today)
+          .lte("scheduled_date", weekLaterStr);
       }
 
-      const { data, error } = await query.order("scheduled_date", { ascending: true });
+      const { data, error } = await query.order("scheduled_date", {
+        ascending: true,
+      });
 
       if (error) {
         console.error("取得エラー:", error.message);
@@ -89,16 +93,22 @@ export default function ShiftsPage() {
       prev.map((shift) => ({
         ...shift,
         attendance: shift.attendance.map((a) =>
-          a.id === attendanceId ? { ...a, status: newStatus } : a
+          a.id === attendanceId ? { ...a, status: newStatus } : a,
         ),
-      }))
+      })),
     );
   };
 
   // ステータス別の人数を計算
-  const attendanceCount = shifts.filter((shift) => shift.attendance[0]?.status === "出勤").length;
-  const absentCount = shifts.filter((shift) => shift.attendance[0]?.status === "欠勤").length;
-  const pendingCount = shifts.filter((shift) => shift.attendance[0]?.status === "未確認").length;
+  const attendanceCount = shifts.filter(
+    (shift) => shift.attendance[0]?.status === "出勤",
+  ).length;
+  const absentCount = shifts.filter(
+    (shift) => shift.attendance[0]?.status === "欠勤",
+  ).length;
+  const pendingCount = shifts.filter(
+    (shift) => shift.attendance[0]?.status === "未確認",
+  ).length;
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
@@ -151,8 +161,10 @@ export default function ShiftsPage() {
             <div
               key={shift.id}
               className={`border rounded-lg p-4 shadow-sm ${
-                shift.attendance[0]?.status === "出勤" ? "border-green-400 bg-green-50"
-                : shift.attendance[0]?.status === "欠勤" ? "border-red-400 bg-red-50"
+                shift.attendance[0]?.status === "出勤" ?
+                  "border-green-400 bg-green-50"
+                : shift.attendance[0]?.status === "欠勤" ?
+                  "border-red-400 bg-red-50"
                 : "border-gray-200"
               }`}
             >
@@ -171,13 +183,15 @@ export default function ShiftsPage() {
                   {["未確認", "出勤", "欠勤"].map((status) => (
                     <button
                       key={status}
-                      onClick={() => updateStatus(shift.attendance[0].id, status)}
+                      onClick={() =>
+                        updateStatus(shift.attendance[0].id, status)
+                      }
                       className={`flex-1 px-2 py-1 rounded text-sm ${
-                        shift.attendance[0].status === status
-                          ? status === "出勤" ? "bg-green-600 text-white"
-                            : status === "欠勤" ? "bg-red-600 text-white"
-                            : "bg-gray-600 text-white"
-                          : "bg-gray-200"
+                        shift.attendance[0].status === status ?
+                          status === "出勤" ? "bg-green-600 text-white"
+                          : status === "欠勤" ? "bg-red-600 text-white"
+                          : "bg-gray-600 text-white"
+                        : "bg-gray-200"
                       }`}
                     >
                       {status}
