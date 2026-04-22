@@ -28,12 +28,14 @@ export default function ShiftNewPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      if (!user) return;
 
       const { data: staffData } = await supabase
         .from("staff")
         .select("store_id")
         .eq("email", user.email)
         .single();
+      if (!staffData) return;
 
       const { data, error } = await supabase
         .from("girls")
