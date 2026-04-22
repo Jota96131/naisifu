@@ -252,4 +252,56 @@ describe("シフト一覧ページ", () => {
     // 穴埋め: attendanceテーブルのupdateが呼ばれたことを確認
     expect(mockFrom).toHaveBeenCalledWith("attendance");
   });
+
+  // ============================
+  // テスト⑦ 「当日」ボタンが初期状態で選択されている
+  // ============================
+  test("初期状態で「当日」ボタンが選択されている", async () => {
+    setupInitialMocks([]);
+
+    render(<ShiftsPage />);
+
+    // 穴埋め: 「当日」ボタンが青色のクラスを持っていることを確認
+    const todayButton = screen.getByText("当日");
+    expect(todayButton.className).toContain("bg-blue-600");
+
+    // 穴埋め: 「今週」ボタンがグレーのクラスを持っていることを確認
+    const weekButton = screen.getByText("今週");
+    expect(weekButton.className).toContain("bg-gray-200");
+  });
+
+  // ============================
+  // テスト⑧ 「今週」ボタンを押すと切り替わる
+  // ============================
+  test("「今週」ボタンを押すと選択状態が切り替わる", async () => {
+    setupInitialMocks([]);
+
+    render(<ShiftsPage />);
+
+    // 初期表示の完了を待つ
+    await waitFor(() => {
+      expect(screen.getByText("シフトはありません")).toBeInTheDocument();
+    });
+
+    // クリック後のデータ再取得用モック
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "test@example.com" } },
+    });
+    mockFrom
+      .mockReturnValueOnce(mockStaffChain())
+      .mockReturnValueOnce(mockShiftsSelectChain([]));
+
+    // 穴埋め: 「今週」ボタンをクリック
+    fireEvent.click(screen.getByText("今週"));
+
+    await waitFor(() => {
+      // 穴埋め: 「今週」ボタンが青色になること
+      const weekButton = screen.getByText("今週");
+      expect(weekButton.className).toContain("bg-blue-600");
+
+      // 穴埋め: 「当日」ボタンがグレーになること
+      const todayButton = screen.getByText("当日");
+      expect(todayButton.className).toContain("bg-gray-200");
+    });
+  });
 });
