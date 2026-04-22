@@ -349,4 +349,31 @@ describe("シフト一覧ページ", () => {
       expect(screen.getByText("欠勤 1名")).toBeInTheDocument();
     });
   });
+
+  // ============================
+  // テスト⑩ バグ再発防止：staffDataがnullでもクラッシュしない
+  // ============================
+  test("staffテーブルにユーザーが未登録でもクラッシュしない", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "unknown@example.com" } },
+    });
+
+    // staffテーブルからデータが見つからない → nullを返す
+    mockFrom.mockReturnValueOnce({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+            data: null,
+          }),
+        }),
+      }),
+    });
+
+    // クラッシュせずにrenderが完了することを確認
+    render(<ShiftsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("シフト一覧")).toBeInTheDocument();
+    });
+  });
 });

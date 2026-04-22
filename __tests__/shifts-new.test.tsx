@@ -160,4 +160,27 @@ describe("シフト登録ページ（バリデーション）", () => {
       expect(mockFrom).toHaveBeenCalledWith("shifts");
     });
   });
+
+  // バグ再発防止：staffDataがnullでもクラッシュしない
+  test("staffテーブルにユーザーが未登録でもクラッシュしない", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "unknown@example.com" } },
+    });
+
+    mockFrom.mockReturnValueOnce({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+            data: null,
+          }),
+        }),
+      }),
+    });
+
+    render(<ShiftNewPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("シフト登録")).toBeInTheDocument();
+    });
+  });
 });

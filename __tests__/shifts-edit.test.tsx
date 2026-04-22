@@ -270,4 +270,27 @@ describe("シフト編集ページ", () => {
       expect(mockPush).toHaveBeenCalledWith("/shifts");
     });
   });
+
+  // バグ再発防止：staffDataがnullでもクラッシュしない
+  test("staffテーブルにユーザーが未登録でもクラッシュしない", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "unknown@example.com" } },
+    });
+
+    mockFrom.mockReturnValueOnce({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+            data: null,
+          }),
+        }),
+      }),
+    });
+
+    render(<ShiftEditPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("シフト編集")).toBeInTheDocument();
+    });
+  });
 });
