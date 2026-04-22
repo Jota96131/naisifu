@@ -304,4 +304,49 @@ describe("シフト一覧ページ", () => {
       expect(todayButton.className).toContain("bg-gray-200");
     });
   });
+
+  // ============================
+  // テスト⑨ 一連フロー：一覧表示→ステータス更新→人数表示が変わる
+  // ============================
+  test("シフト一覧表示後、ステータスを欠勤に変更すると欠勤人数が表示される", async () => {
+    setupInitialMocks([
+      {
+        id: "1",
+        girls: { name: "さくら" },
+        scheduled_date: "2026-04-22",
+        scheduled_time: "20:00",
+        attendance: [{ id: "a1", status: "未確認" }],
+      },
+      {
+        id: "2",
+        girls: { name: "ひなた" },
+        scheduled_date: "2026-04-22",
+        scheduled_time: "21:00",
+        attendance: [{ id: "a2", status: "未確認" }],
+      },
+    ]);
+
+    render(<ShiftsPage />);
+
+    // 一覧が表示されることを確認
+    await waitFor(() => {
+      expect(screen.getByText("さくら")).toBeInTheDocument();
+      expect(screen.getByText("ひなた")).toBeInTheDocument();
+    });
+
+    // 欠勤人数がまだ0であることを確認
+    expect(screen.getByText("欠勤 0名")).toBeInTheDocument();
+
+    // さくらのステータスを「欠勤」に変更
+    mockFrom.mockReturnValueOnce(mockAttendanceUpdateChain());
+
+    // 「欠勤」ボタンをクリック（さくらのカードの方）
+    const absentButtons = screen.getAllByText("欠勤");
+    fireEvent.click(absentButtons[0]);
+
+    // ステータス変更後、欠勤人数が表示されることを確認
+    await waitFor(() => {
+      expect(screen.getByText("欠勤 1名")).toBeInTheDocument();
+    });
+  });
 });
