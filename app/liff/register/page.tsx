@@ -14,9 +14,8 @@ export default function LiffRegisterPage() {
   useEffect(() => {
     const initLiff = async () => {
       try {
-        setStatus("LIFF_ID: " + (process.env.NEXT_PUBLIC_LIFF_ID ?? "未設定"));
+        setStatus("LIFF初期化中...");
         await liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! });
-        setStatus("init完了 isLoggedIn=" + liff.isLoggedIn());
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
@@ -24,12 +23,31 @@ export default function LiffRegisterPage() {
         const profile = await liff.getProfile();
         setUserId(profile.userId);
         setStatus("プロフィール取得成功");
+
+        if (!girlId) {
+          setStatus("girl_idがURLに指定されていません");
+          return;
+        }
+
+        setStatus("DBに保存中...");
+        const res = await fetch("/api/line/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: profile.userId, girlId }),
+        });
+
+        if (!res.ok) {
+          const errBody = await res.json();
+          throw new Error(errBody.error ?? "保存に失敗しました");
+        }
+
+        setStatus("✅ 連携完了しました！");
       } catch (e) {
         setError(String(e));
       }
     };
     initLiff();
-  }, []);
+  }, [girlId]);
 
   return (
     <div className="max-w-2xl mx-auto py-20 px-4">
