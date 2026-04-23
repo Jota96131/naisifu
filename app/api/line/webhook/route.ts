@@ -2,8 +2,9 @@
 // LINEプラットフォームから、友達追加などのイベントがPOSTで届く
 
 export async function POST(request: Request) {
-  // リクエストのbodyを取得
-  const body = await request.json();
+  // リクエストのbodyを取得（空のときもあるので安全に処理）
+  const text = await request.text();
+  const body = text ? JSON.parse(text) : { events: [] };
   console.log("LINE Webhook受信:", JSON.stringify(body, null, 2));
 
   // eventsをループして、followイベントだけ処理する
