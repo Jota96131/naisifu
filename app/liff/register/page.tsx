@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import liff from "@line/liff";
 
-export default function LiffRegisterPage() {
+function LiffRegisterInner() {
   const searchParams = useSearchParams();
   const girlId = searchParams.get("girl_id");
   const [userId, setUserId] = useState("");
@@ -57,5 +57,13 @@ export default function LiffRegisterPage() {
       <p>girl_id: {girlId ?? "未指定"}</p>
       {error && <p className="text-red-500 mt-4">エラー: {error}</p>}
     </div>
+  );
+}
+
+export default function LiffRegisterPage() {
+  return (
+    <Suspense fallback={<p className="py-20 px-4">読み込み中...</p>}>
+      <LiffRegisterInner />
+    </Suspense>
   );
 }
