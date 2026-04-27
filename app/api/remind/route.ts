@@ -1,16 +1,34 @@
+import { timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+function isAuthorized(authHeader: string | null, secret: string): boolean {
+  if (!authHeader) return false;
+  const expected = `Bearer ${secret}`;
+  const a = Buffer.from(authHeader);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error("[remind] CRON_SECRET is not configured");
+    return Response.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
+
+  if (!isAuthorized(request.headers.get("authorization"), cronSecret)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!token) {
-    return new Response(
-      JSON.stringify({ error: "LINE_CHANNEL_ACCESS_TOKEN is not configured" }),
-      { status: 500 }
+    return Response.json(
+      { error: "LINE_CHANNEL_ACCESS_TOKEN is not configured" },
+      { status: 500 },
     );
   }
 
@@ -22,22 +40,27 @@ export async function GET(request: Request) {
     .eq("scheduled_date", today);
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return Response.json({ error: error.message }, { status: 500 });
   }
 
   if (!shifts || shifts.length === 0) {
-    return new Response(
-      JSON.stringify({ message: "本日の出勤予定はありません", date: today }),
-      { status: 200 }
+    return Response.json(
+      { message: "本日の出勤予定はありません", date: today },
+      { status: 200 },
     );
   }
 
-  const results = [];
+  const results: Array<{
+    girlId?: string | number;
+    name?: string;
+    status: string;
+    detail?: string;
+  }> = [];
 
   for (const shift of shifts) {
     const girl = Array.isArray(shift.girls) ? shift.girls[0] : shift.girls;
     if (!girl) {
-      results.push({ girlId: undefined, status: "skipped（girls未取得）" });
+      results.push({ status: "skipped（girls未取得）" });
       continue;
     }
     if (!girl.line_user_id) {
@@ -45,29 +68,51 @@ export async function GET(request: Request) {
       continue;
     }
 
-    const message = `${girl.name}さん、本日${shift.scheduled_time}から出勤予定です。\n出勤する場合は「出勤」、欠勤の場合は「欠勤」と返信してください。`;
+    const time = String(shift.scheduled_time).slice(0, 5);
+    const message = `${girl.name}さん、本日${time}から出勤予定です。\n出勤する場合は「出勤」、欠勤の場合は「欠勤」と返信してください。`;
 
-    const res = await fetch("https://api.line.me/v2/bot/message/push", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        to: girl.line_user_id,
-        messages: [{ type: "text", text: message }],
-      }),
-    });
+    try {
+      const res = await fetch("https://api.line.me/v2/bot/message/push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          to: girl.line_user_id,
+          messages: [{ type: "text", text: message }],
+        }),
+      });
 
-    results.push({
-      girlId: girl.id,
-      name: girl.name,
-      status: res.ok ? "sent" : `failed(${res.status})`,
-    });
+      if (res.ok) {
+        results.push({ girlId: girl.id, name: girl.name, status: "sent" });
+      } else {
+        const detail = await res.text().catch(() => "");
+        results.push({
+          girlId: girl.id,
+          name: girl.name,
+          status: `failed(${res.status})`,
+          detail,
+        });
+      }
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      results.push({
+        girlId: girl.id,
+        name: girl.name,
+        status: "failed(network)",
+        detail,
+      });
+    }
   }
 
-  return new Response(
-    JSON.stringify({ date: today, total: shifts.length, results }),
-    { status: 200 }
+  const hasFailure = results.some((r) => r.status.startsWith("failed"));
+  if (hasFailure) {
+    console.error("[remind] some sends failed", { date: today, results });
+  }
+
+  return Response.json(
+    { date: today, total: shifts.length, results },
+    { status: 200 },
   );
 }
