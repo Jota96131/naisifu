@@ -1,6 +1,6 @@
 // LINE Webhookの受け口
 // LINEプラットフォームから、友達追加・メッセージなどのイベントがPOSTで届く
-
+import { parseAttendance } from "@/lib/parse-attendance";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 type LineEvent = {
@@ -28,7 +28,8 @@ export async function POST(request: Request) {
       console.log("メッセージ受信:", { text, lineUserId });
 
       // サブタスク2: メッセージ判定
-      if (text !== "出勤" && text !== "欠勤") {
+      const status = parseAttendance(text);
+      if (status === null) {
         console.log("出勤/欠勤以外のメッセージなのでスキップ");
         continue;
       }
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
       // 3. attendance のステータスを更新
       const { error: updateError } = await supabaseAdmin
         .from("attendance")
-        .update({ status: text })
+        .update({ status })
         .eq("shift_id", shift.id);
 
       if (updateError) {
