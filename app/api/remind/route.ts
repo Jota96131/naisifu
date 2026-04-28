@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { buildReminderMessage } from "@/lib/build-reminder-message";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -32,7 +33,9 @@ export async function GET(request: Request) {
     );
   }
 
-  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+  const today = new Date().toLocaleDateString("sv-SE", {
+    timeZone: "Asia/Tokyo",
+  });
 
   const { data: shifts, error } = await supabaseAdmin
     .from("shifts")
@@ -64,12 +67,15 @@ export async function GET(request: Request) {
       continue;
     }
     if (!girl.line_user_id) {
-      results.push({ girlId: girl.id, status: "skipped（line_user_id未登録）" });
+      results.push({
+        girlId: girl.id,
+        status: "skipped（line_user_id未登録）",
+      });
       continue;
     }
 
     const time = String(shift.scheduled_time).slice(0, 5);
-    const message = `${girl.name}さん、本日${time}から出勤予定です。\n出勤する場合は「出勤」、欠勤の場合は「欠勤」と返信してください。`;
+    const message = buildReminderMessage(girl.name, time);
 
     try {
       const res = await fetch("https://api.line.me/v2/bot/message/push", {
