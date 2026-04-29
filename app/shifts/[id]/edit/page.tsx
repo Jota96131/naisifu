@@ -91,13 +91,18 @@ export default function ShiftEditPage() {
   };
 
   const inputClass =
-    "w-full px-4 py-3 text-sm text-[#F5F0F5] bg-[#0A0510] border border-[#2A1A30] rounded-xl outline-none focus:border-[#FF3B8B] transition";
-  const labelClass = "block text-xs font-medium text-[#9A8AA0] mb-1.5";
+    "w-full px-4 py-3 text-sm border border-gray-300 rounded-2xl outline-none focus:border-indigo-500 transition";
+  const labelClass = "block text-sm font-medium text-gray-700 mb-1.5";
 
   return (
-    <div className="min-h-screen bg-[#0F0814] text-[#F5F0F5]">
+    <div className="min-h-screen bg-white">
       <div className="max-w-2xl mx-auto py-8 px-4">
-        <h1 className="text-2xl font-bold mb-6">シフト編集</h1>
+        <div className="flex items-center gap-2 mb-6">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-sky-500 bg-clip-text text-transparent">
+            シフト編集
+          </h1>
+          <span className="text-xl">🌙</span>
+        </div>
 
         <div className="space-y-4">
           <div>
@@ -138,13 +143,13 @@ export default function ShiftEditPage() {
 
           <button
             onClick={handleSubmit}
-            className="w-full bg-gradient-to-r from-[#FF3B8B] to-[#B561FF] text-[#0F0814] font-bold px-4 py-3.5 rounded-xl transition hover:opacity-90"
+            className="w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-3 rounded-2xl hover:opacity-90 transition"
           >
             更新
           </button>
           <button
             onClick={handleDelete}
-            className="w-full bg-[#1A1020] border border-[#FF3B8B]/40 text-[#FF3B8B] font-bold px-4 py-3.5 rounded-xl transition hover:bg-[#FF3B8B]/10"
+            className="w-full bg-white border border-red-300 text-red-600 font-bold px-4 py-3 rounded-2xl hover:bg-red-50 transition"
           >
             削除
           </button>

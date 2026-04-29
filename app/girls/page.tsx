@@ -117,46 +117,54 @@ export default function GirlsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold mb-6">女の子一覧</h1>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <div className="flex items-center gap-2 mb-6">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-sky-500 bg-clip-text text-transparent">
+            女の子一覧
+          </h1>
+          <span className="text-xl">🌙</span>
+        </div>
 
-      <div className="flex gap-2 mb-6">
-        <input
-          type="text"
-          placeholder="名前を入力"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="flex-1 border border-gray-300 rounded px-3 py-2"
-        />
-        <button
-          onClick={handleAdd}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          登録
-        </button>
-      </div>
+        <div className="flex gap-2 mb-6">
+          <input
+            type="text"
+            placeholder="名前を入力"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-2xl outline-none focus:border-indigo-500 transition"
+          />
+          <button
+            onClick={handleAdd}
+            className="bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-5 py-3 rounded-2xl hover:opacity-90 transition"
+          >
+            登録
+          </button>
+        </div>
 
-      {loading ?
-        <p className="text-gray-500">読み込み中...</p>
-      : girls.length === 0 ?
-        <p className="text-gray-500">まだ登録されていません</p>
-      : <ul className="space-y-2">
-          {girls.map((girl) => (
-            <li
-              key={girl.id}
-              className="flex items-center justify-between border border-gray-200 rounded px-4 py-3"
-            >
-              <span>{girl.name}</span>
-              <button
-                onClick={() => handleDelete(girl.id)}
-                className="text-red-500 hover:text-red-700 text-sm"
+        {loading ? (
+          <p className="text-gray-500 text-center py-8">読み込み中...</p>
+        ) : girls.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">まだ登録されていません</p>
+        ) : (
+          <ul className="space-y-2">
+            {girls.map((girl) => (
+              <li
+                key={girl.id}
+                className="flex items-center justify-between bg-white border border-gray-200 rounded-2xl px-4 py-3"
               >
-                削除
-              </button>
-            </li>
-          ))}
-        </ul>
-      }
+                <span className="text-gray-800 font-medium">{girl.name}</span>
+                <button
+                  onClick={() => handleDelete(girl.id)}
+                  className="text-red-600 hover:opacity-80 text-sm"
+                >
+                  削除
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

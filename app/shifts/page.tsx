@@ -100,19 +100,24 @@ export default function ShiftsPage() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-[#0F0814] text-[#F5F0F5]">
+    <div className="min-h-screen bg-white">
       <div className="max-w-2xl mx-auto py-8 px-4">
-        <h1 className="text-2xl font-bold mb-6">シフト一覧</h1>
+        <div className="flex items-center gap-2 mb-6">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-sky-500 bg-clip-text text-transparent">
+            シフト一覧
+          </h1>
+          <span className="text-xl">🌙</span>
+        </div>
 
         {shifts.length > 0 && (
           <div className="flex gap-2 mb-4">
-            <div className="flex-1 p-2.5 bg-[#FF3B8B]/10 border border-[#FF3B8B]/30 rounded-xl text-[#FF3B8B] text-center text-sm font-medium">
+            <div className="flex-1 px-3 py-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-700 text-center text-sm font-medium">
               出勤 {attendanceCount}名
             </div>
-            <div className="flex-1 p-2.5 bg-[#B561FF]/10 border border-[#B561FF]/30 rounded-xl text-[#B561FF] text-center text-sm font-medium">
+            <div className="flex-1 px-3 py-2.5 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-center text-sm font-medium">
               欠勤 {absentCount}名
             </div>
-            <div className="flex-1 p-2.5 bg-[#1A1020] border border-[#2A1A30] rounded-xl text-[#9A8AA0] text-center text-sm font-medium">
+            <div className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-gray-600 text-center text-sm font-medium">
               未確認 {pendingCount}名
             </div>
           </div>
@@ -123,8 +128,8 @@ export default function ShiftsPage() {
             onClick={() => setViewMode("today")}
             className={
               viewMode === "today"
-                ? "flex-1 bg-gradient-to-r from-[#FF3B8B] to-[#B561FF] text-[#0F0814] font-bold px-4 py-2.5 rounded-xl text-sm"
-                : "flex-1 bg-[#1A1020] border border-[#2A1A30] text-[#9A8AA0] px-4 py-2.5 rounded-xl text-sm"
+                ? "flex-1 bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-2.5 rounded-2xl text-sm"
+                : "flex-1 bg-white border border-gray-300 text-gray-600 px-4 py-2.5 rounded-2xl text-sm"
             }
           >
             当日
@@ -133,8 +138,8 @@ export default function ShiftsPage() {
             onClick={() => setViewMode("week")}
             className={
               viewMode === "week"
-                ? "flex-1 bg-gradient-to-r from-[#FF3B8B] to-[#B561FF] text-[#0F0814] font-bold px-4 py-2.5 rounded-xl text-sm"
-                : "flex-1 bg-[#1A1020] border border-[#2A1A30] text-[#9A8AA0] px-4 py-2.5 rounded-xl text-sm"
+                ? "flex-1 bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-2.5 rounded-2xl text-sm"
+                : "flex-1 bg-white border border-gray-300 text-gray-600 px-4 py-2.5 rounded-2xl text-sm"
             }
           >
             今週
@@ -142,7 +147,7 @@ export default function ShiftsPage() {
         </div>
 
         {shifts.length === 0 ? (
-          <p className="text-[#9A8AA0] text-center py-8">シフトはありません</p>
+          <p className="text-gray-500 text-center py-8">シフトはありません</p>
         ) : (
           <div className="space-y-3">
             {shifts.map((shift) => (
@@ -150,20 +155,20 @@ export default function ShiftsPage() {
                 key={shift.id}
                 className={`rounded-2xl p-4 border ${
                   shift.attendance[0]?.status === "出勤"
-                    ? "border-[#FF3B8B]/40 bg-[#FF3B8B]/5"
+                    ? "border-emerald-300 bg-emerald-50"
                     : shift.attendance[0]?.status === "欠勤"
-                      ? "border-[#B561FF]/40 bg-[#B561FF]/5"
-                      : "border-[#2A1A30] bg-[#1A1020]"
+                      ? "border-red-300 bg-red-50"
+                      : "border-gray-200 bg-white"
                 }`}
               >
                 <div
                   onClick={() => router.push(`/shifts/${shift.id}/edit`)}
                   className="flex items-center justify-between cursor-pointer"
                 >
-                  <p className="font-bold text-lg text-[#F5F0F5]">
+                  <p className="font-bold text-lg text-gray-800">
                     {shift.girls.name}
                   </p>
-                  <div className="text-right text-[#9A8AA0] text-sm">
+                  <div className="text-right text-gray-500 text-sm">
                     <p>{shift.scheduled_date}</p>
                     <p>{shift.scheduled_time}</p>
                   </div>
@@ -176,14 +181,14 @@ export default function ShiftsPage() {
                         onClick={() =>
                           updateStatus(shift.attendance[0].id, status)
                         }
-                        className={`flex-1 px-2 py-1.5 rounded-lg text-sm transition ${
+                        className={`flex-1 px-2 py-1.5 rounded-xl text-sm transition ${
                           shift.attendance[0].status === status
                             ? status === "出勤"
-                              ? "bg-[#FF3B8B] text-[#0F0814] font-bold"
+                              ? "bg-emerald-500 text-white font-bold"
                               : status === "欠勤"
-                                ? "bg-[#B561FF] text-[#0F0814] font-bold"
-                                : "bg-[#9A8AA0] text-[#0F0814] font-bold"
-                            : "bg-[#0A0510] border border-[#2A1A30] text-[#9A8AA0]"
+                                ? "bg-red-500 text-white font-bold"
+                                : "bg-gray-500 text-white font-bold"
+                            : "bg-white border border-gray-300 text-gray-600"
                         }`}
                       >
                         {status}
@@ -198,7 +203,7 @@ export default function ShiftsPage() {
 
         <button
           onClick={() => router.push("/shifts/new")}
-          className="mt-6 w-full bg-gradient-to-r from-[#FF3B8B] to-[#B561FF] text-[#0F0814] font-bold px-4 py-3.5 rounded-xl transition hover:opacity-90"
+          className="mt-6 w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-3 rounded-2xl hover:opacity-90 transition"
         >
           ＋ シフト登録
         </button>
