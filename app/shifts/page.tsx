@@ -38,7 +38,13 @@ export default function ShiftsPage() {
         .single();
       if (!staffData) return;
 
-      const today = new Date().toISOString().split("T")[0];
+      const formatLocalDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+      const today = formatLocalDate(new Date());
 
       let query = supabase
         .from("shifts")
@@ -50,7 +56,7 @@ export default function ShiftsPage() {
       } else {
         const weekLater = new Date();
         weekLater.setDate(weekLater.getDate() + 7);
-        const weekLaterStr = weekLater.toISOString().split("T")[0];
+        const weekLaterStr = formatLocalDate(weekLater);
         query = query
           .gte("scheduled_date", today)
           .lte("scheduled_date", weekLaterStr);
