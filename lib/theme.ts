@@ -1,0 +1,16 @@
+export const colors = {
+  bg: "#0F0814",
+  bgCard: "#1A1020",
+  bgInput: "#0A0510",
+  bgAccent: "#2A1A30",
+  pink: "#FF3B8B",
+  pinkLight: "#FF6B9D",
+  purple: "#B561FF",
+  gold: "#FFD700",
+  textMain: "#F5F0F5",
+  textSub: "#9A8AA0",
+  border: "#2A1A30",
+  borderActive: "#FF3B8B",
+  error: "#FF3B8B",
+  errorBg: "rgba(255, 59, 139, 0.1)",
+} as const;

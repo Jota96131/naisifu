@@ -13,8 +13,8 @@ type Staff = {
 
 export default function StaffPage() {
   const [name, setName] = useState("");
-  const [staffList, setStaffList] = useState<Staff[]>([]); // 一覧データを入れる箱
-  const [loading, setLoading] = useState(true); // 最初は読み込み中
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchStaff = async () => {
     const {
@@ -71,11 +71,12 @@ export default function StaffPage() {
         setLoading(false);
       }
     })();
-    return () => { ignore = true; };
-  }, []); // ページ開いた時に1回だけ実行
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleAdd = async () => {
-    // 登録処理
     if (!name.trim()) return;
     const {
       data: { user },
@@ -101,7 +102,6 @@ export default function StaffPage() {
   };
 
   const handleDelete = async (id: string) => {
-    // 削除処理
     const { error } = await supabase.from("staff").delete().eq("id", id);
     if (error) {
       console.error(error.message);
@@ -111,46 +111,49 @@ export default function StaffPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold mb-6">黒服一覧</h1>
+    <div className="min-h-screen bg-[#0F0814] text-[#F5F0F5]">
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">黒服一覧</h1>
 
-      <div className="flex gap-2 mb-6">
-        <input
-          type="text"
-          placeholder="名前を入力"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="flex-1 border border-gray-300 rounded px-3 py-2"
-        />
-        <button
-          onClick={handleAdd}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          登録
-        </button>
-      </div>
+        <div className="flex gap-2 mb-6">
+          <input
+            type="text"
+            placeholder="名前を入力"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1 px-4 py-3 text-sm text-[#F5F0F5] bg-[#0A0510] border border-[#2A1A30] rounded-xl outline-none focus:border-[#FF3B8B] transition placeholder-[#9A8AA0]"
+          />
+          <button
+            onClick={handleAdd}
+            className="bg-gradient-to-r from-[#FF3B8B] to-[#B561FF] text-[#0F0814] font-bold px-5 py-3 rounded-xl"
+          >
+            登録
+          </button>
+        </div>
 
-      {loading ?
-        <p className="text-gray-500">読み込み中...</p>
-      : staffList.length === 0 ?
-        <p className="text-gray-500">まだ登録されていません</p>
-      : <ul className="space-y-2">
-          {staffList.map((staff) => (
-            <li
-              key={staff.id}
-              className="flex items-center justify-between border border-gray-200 rounded px-4 py-3"
-            >
-              <span>{staff.name}</span>
-              <button
-                onClick={() => handleDelete(staff.id)}
-                className="text-red-500 hover:text-red-700 text-sm"
+        {loading ? (
+          <p className="text-[#9A8AA0]">読み込み中...</p>
+        ) : staffList.length === 0 ? (
+          <p className="text-[#9A8AA0]">まだ登録されていません</p>
+        ) : (
+          <ul className="space-y-2">
+            {staffList.map((staff) => (
+              <li
+                key={staff.id}
+                className="flex items-center justify-between bg-[#1A1020] border border-[#2A1A30] rounded-xl px-4 py-3"
               >
-                削除
-              </button>
-            </li>
-          ))}
-        </ul>
-      }
+                <span className="text-[#F5F0F5]">{staff.name}</span>
+                <button
+                  onClick={() => handleDelete(staff.id)}
+                  className="text-[#FF3B8B] hover:opacity-80 text-sm"
+                >
+                  削除
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

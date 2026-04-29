@@ -21,19 +21,9 @@ type Shift = {
 
 export default function ShiftsPage() {
   const router = useRouter();
-  // 【TODO 1】stateを追加してください
-  // - シフト一覧を保存するstate
-  // - 表示モード（"today" or "week"）を保存するstate
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [viewMode, setViewMode] = useState("today");
 
-  // ヒント: useState<Shift[]>([]) と useState("today")
-
-  // 【TODO 2】シフトを取得する関数を作ってください
-  // useEffectの中で、以下の流れで取得する:
-  // 1. supabase.auth.getUser() でログインユーザーを取得
-  // 2. staffテーブルからstore_idを取得
-  // 3. shiftsテーブルからデータを取得（girlsテーブルのnameも一緒に）
   useEffect(() => {
     const fetchShifts = async () => {
       const {
@@ -79,7 +69,6 @@ export default function ShiftsPage() {
     fetchShifts();
   }, [viewMode]);
 
-  // ステータス更新処理
   const updateStatus = async (attendanceId: string, newStatus: string) => {
     const { error } = await supabase
       .from("attendance")
@@ -90,7 +79,6 @@ export default function ShiftsPage() {
       console.error("ステータス更新エラー:", error.message);
       return;
     }
-    // 更新後にデータを再取得
     setShifts((prev) =>
       prev.map((shift) => ({
         ...shift,
@@ -101,7 +89,6 @@ export default function ShiftsPage() {
     );
   };
 
-  // ステータス別の人数を計算
   const attendanceCount = shifts.filter(
     (shift) => shift.attendance[0]?.status === "出勤",
   ).length;
@@ -113,106 +100,109 @@ export default function ShiftsPage() {
   ).length;
 
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold mb-6">シフト一覧</h1>
+    <div className="min-h-screen bg-[#0F0814] text-[#F5F0F5]">
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <h1 className="text-2xl font-bold mb-6">シフト一覧</h1>
 
-      {/* ステータス別の人数表示 */}
-      {shifts.length > 0 && (
-        <div className="flex gap-2 mb-4">
-          <div className="flex-1 p-2 bg-green-100 border border-green-300 rounded text-green-700 text-center text-sm">
-            出勤 {attendanceCount}名
+        {shifts.length > 0 && (
+          <div className="flex gap-2 mb-4">
+            <div className="flex-1 p-2.5 bg-[#FF3B8B]/10 border border-[#FF3B8B]/30 rounded-xl text-[#FF3B8B] text-center text-sm font-medium">
+              出勤 {attendanceCount}名
+            </div>
+            <div className="flex-1 p-2.5 bg-[#B561FF]/10 border border-[#B561FF]/30 rounded-xl text-[#B561FF] text-center text-sm font-medium">
+              欠勤 {absentCount}名
+            </div>
+            <div className="flex-1 p-2.5 bg-[#1A1020] border border-[#2A1A30] rounded-xl text-[#9A8AA0] text-center text-sm font-medium">
+              未確認 {pendingCount}名
+            </div>
           </div>
-          <div className="flex-1 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-center text-sm">
-            欠勤 {absentCount}名
-          </div>
-          <div className="flex-1 p-2 bg-gray-100 border border-gray-300 rounded text-gray-700 text-center text-sm">
-            未確認 {pendingCount}名
-          </div>
+        )}
+
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setViewMode("today")}
+            className={
+              viewMode === "today"
+                ? "flex-1 bg-gradient-to-r from-[#FF3B8B] to-[#B561FF] text-[#0F0814] font-bold px-4 py-2.5 rounded-xl text-sm"
+                : "flex-1 bg-[#1A1020] border border-[#2A1A30] text-[#9A8AA0] px-4 py-2.5 rounded-xl text-sm"
+            }
+          >
+            当日
+          </button>
+          <button
+            onClick={() => setViewMode("week")}
+            className={
+              viewMode === "week"
+                ? "flex-1 bg-gradient-to-r from-[#FF3B8B] to-[#B561FF] text-[#0F0814] font-bold px-4 py-2.5 rounded-xl text-sm"
+                : "flex-1 bg-[#1A1020] border border-[#2A1A30] text-[#9A8AA0] px-4 py-2.5 rounded-xl text-sm"
+            }
+          >
+            今週
+          </button>
         </div>
-      )}
 
-      {/* 改善2: ボタンを横幅いっぱいに */}
-      <div className="flex gap-2 mb-6">
+        {shifts.length === 0 ? (
+          <p className="text-[#9A8AA0] text-center py-8">シフトはありません</p>
+        ) : (
+          <div className="space-y-3">
+            {shifts.map((shift) => (
+              <div
+                key={shift.id}
+                className={`rounded-2xl p-4 border ${
+                  shift.attendance[0]?.status === "出勤"
+                    ? "border-[#FF3B8B]/40 bg-[#FF3B8B]/5"
+                    : shift.attendance[0]?.status === "欠勤"
+                      ? "border-[#B561FF]/40 bg-[#B561FF]/5"
+                      : "border-[#2A1A30] bg-[#1A1020]"
+                }`}
+              >
+                <div
+                  onClick={() => router.push(`/shifts/${shift.id}/edit`)}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <p className="font-bold text-lg text-[#F5F0F5]">
+                    {shift.girls.name}
+                  </p>
+                  <div className="text-right text-[#9A8AA0] text-sm">
+                    <p>{shift.scheduled_date}</p>
+                    <p>{shift.scheduled_time}</p>
+                  </div>
+                </div>
+                {shift.attendance[0] && (
+                  <div className="flex gap-2 mt-3">
+                    {["未確認", "出勤", "欠勤"].map((status) => (
+                      <button
+                        key={status}
+                        onClick={() =>
+                          updateStatus(shift.attendance[0].id, status)
+                        }
+                        className={`flex-1 px-2 py-1.5 rounded-lg text-sm transition ${
+                          shift.attendance[0].status === status
+                            ? status === "出勤"
+                              ? "bg-[#FF3B8B] text-[#0F0814] font-bold"
+                              : status === "欠勤"
+                                ? "bg-[#B561FF] text-[#0F0814] font-bold"
+                                : "bg-[#9A8AA0] text-[#0F0814] font-bold"
+                            : "bg-[#0A0510] border border-[#2A1A30] text-[#9A8AA0]"
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <button
-          onClick={() => setViewMode("today")}
-          className={
-            viewMode === "today" ?
-              "flex-1 bg-blue-600 text-white px-4 py-2 rounded"
-            : "flex-1 bg-gray-200 px-4 py-2 rounded"
-          }
+          onClick={() => router.push("/shifts/new")}
+          className="mt-6 w-full bg-gradient-to-r from-[#FF3B8B] to-[#B561FF] text-[#0F0814] font-bold px-4 py-3.5 rounded-xl transition hover:opacity-90"
         >
-          当日
-        </button>
-        <button
-          onClick={() => setViewMode("week")}
-          className={
-            viewMode === "week" ?
-              "flex-1 bg-blue-600 text-white px-4 py-2 rounded"
-            : "flex-1 bg-gray-200 px-4 py-2 rounded"
-          }
-        >
-          今週
+          ＋ シフト登録
         </button>
       </div>
-
-      {/* 改善1: カード情報を横並びに */}
-      {shifts.length === 0 ?
-        <p className="text-gray-500">シフトはありません</p>
-      : <div className="space-y-3">
-          {shifts.map((shift) => (
-            <div
-              key={shift.id}
-              className={`border rounded-lg p-4 shadow-sm ${
-                shift.attendance[0]?.status === "出勤" ?
-                  "border-green-400 bg-green-50"
-                : shift.attendance[0]?.status === "欠勤" ?
-                  "border-red-400 bg-red-50"
-                : "border-gray-200"
-              }`}
-            >
-              <div
-                onClick={() => router.push(`/shifts/${shift.id}/edit`)}
-                className="flex items-center justify-between cursor-pointer"
-              >
-                <p className="font-bold text-lg">{shift.girls.name}</p>
-                <div className="text-right text-gray-600">
-                  <p>{shift.scheduled_date}</p>
-                  <p>{shift.scheduled_time}</p>
-                </div>
-              </div>
-              {shift.attendance[0] && (
-                <div className="flex gap-2 mt-3">
-                  {["未確認", "出勤", "欠勤"].map((status) => (
-                    <button
-                      key={status}
-                      onClick={() =>
-                        updateStatus(shift.attendance[0].id, status)
-                      }
-                      className={`flex-1 px-2 py-1 rounded text-sm ${
-                        shift.attendance[0].status === status ?
-                          status === "出勤" ? "bg-green-600 text-white"
-                          : status === "欠勤" ? "bg-red-600 text-white"
-                          : "bg-gray-600 text-white"
-                        : "bg-gray-200"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      }
-
-      {/* 改善3: シフト登録への導線 */}
-      <button
-        onClick={() => router.push("/shifts/new")}
-        className="mt-6 w-full bg-green-600 text-white px-4 py-3 rounded hover:bg-green-700"
-      >
-        ＋ シフト登録
-      </button>
     </div>
   );
 }
