@@ -86,4 +86,56 @@ describe("LINE Webhook", () => {
     // 検証：attendanceテーブルが呼ばれた
     expect(mockFrom).toHaveBeenCalledWith("attendance");
   });
+  // ============================
+  // テスト② 「欠勤」メッセージで attendance.status が更新される
+  // ============================
+  test("「欠勤」メッセージで attendance.status が更新される", async () => {
+    // モックを順番にセット（girls → shifts → attendance）
+    mockFrom
+      .mockReturnValueOnce(mockGirlsChain({ id: "1", name: "きい" }))
+      .mockReturnValueOnce(mockShiftsChain({ id: "9" }))
+      .mockReturnValueOnce(mockAttendanceUpdateChain());
+
+    const request = new Request("http://localhost/api/line/webhook", {
+      method: "POST",
+      body: JSON.stringify({
+        events: [
+          {
+            type: "message",
+            source: { userId: "U123" },
+            message: { type: "text", text: "欠勤" },
+          },
+        ],
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(mockFrom).toHaveBeenCalledWith("attendance");
+  });
+  // ============================
+  // テスト③ 「こんにちは」など出勤/欠勤以外のメッセージはスキップされる
+  // ============================
+  test("出勤/欠勤以外のメッセージは Supabase を呼ばずにスキップされる", async () => {
+    const request = new Request("http://localhost/api/line/webhook", {
+      method: "POST",
+      body: JSON.stringify({
+        events: [
+          {
+            type: "message",
+            source: { userId: "U123" },
+            message: { type: "text", text: "こんにちは" },
+          },
+        ],
+      }),
+    });
+
+    const response = await POST(request);
+
+    // 検証：200で返ってきた（エラーじゃない）
+    expect(response.status).toBe(200);
+    // 検証：Supabaseは一度も呼ばれていない
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
 });
