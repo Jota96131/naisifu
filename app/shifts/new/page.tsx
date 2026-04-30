@@ -17,6 +17,10 @@ export default function ShiftNewPage() {
   const [selectedGirlId, setSelectedGirlId] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeSheetOpen, setTimeSheetOpen] = useState(false);
 
   useEffect(() => {
     const fetchGirls = async () => {
@@ -47,8 +51,44 @@ export default function ShiftNewPage() {
     fetchGirls();
   }, []);
 
+  const timeOptions: string[] = [];
+  for (let h = 19; h <= 22; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 22 && m > 0) break;
+      timeOptions.push(
+        `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
+      );
+    }
+  }
+
+  const formatLocalDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const dayChips = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    return {
+      value: formatLocalDate(d),
+      label:
+        i === 0 ? "今日" : i === 1 ? "明日" : `${d.getMonth() + 1}/${d.getDate()}`,
+      weekday: weekdays[d.getDay()],
+      isWeekend: d.getDay() === 0 || d.getDay() === 6,
+    };
+  });
+
+  const isCustomDate =
+    scheduledDate !== "" && !dayChips.some((c) => c.value === scheduledDate);
+
+  const isFormValid = selectedGirlId && scheduledDate && scheduledTime;
+
   const handleSubmit = async () => {
-    if (!selectedGirlId || !scheduledDate || !scheduledTime) return;
+    if (!isFormValid || submitting) return;
+    setSubmitting(true);
     const { data: shiftData, error } = await supabase
       .from("shifts")
       .insert({
@@ -61,6 +101,7 @@ export default function ShiftNewPage() {
 
     if (error) {
       console.error("登録エラー:", error.message);
+      setSubmitting(false);
       return;
     }
 
@@ -79,10 +120,31 @@ export default function ShiftNewPage() {
     "w-full px-4 py-3 text-sm border border-gray-300 rounded-2xl outline-none focus:border-indigo-500 transition";
   const labelClass = "block text-sm font-medium text-gray-700 mb-1.5";
 
+  const selectedGirl = girls.find((g) => g.id === selectedGirlId);
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-2xl mx-auto py-8 px-4">
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => router.push("/shifts")}
+            className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition"
+            aria-label="戻る"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-sky-500 bg-clip-text text-transparent">
             シフト登録
           </h1>
@@ -92,48 +154,260 @@ export default function ShiftNewPage() {
         <div className="space-y-4">
           <div>
             <label className={labelClass}>女の子</label>
-            <select
-              value={selectedGirlId}
-              onChange={(e) => setSelectedGirlId(e.target.value)}
-              className={inputClass}
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className={`${inputClass} flex items-center justify-between text-left ${
+                selectedGirl ? "text-gray-800" : "text-gray-400"
+              }`}
             >
-              <option value="">選択してください</option>
-              {girls.map((girl) => (
-                <option key={girl.id} value={girl.id}>
-                  {girl.name}
-                </option>
-              ))}
-            </select>
+              <span>{selectedGirl ? selectedGirl.name : "選択してください"}</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-gray-400"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
           </div>
 
           <div>
-            <label className={labelClass}>出勤予定日</label>
-            <input
-              type="date"
-              value={scheduledDate}
-              onChange={(e) => setScheduledDate(e.target.value)}
-              className={inputClass}
-            />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-medium text-gray-700">
+                出勤予定日
+              </label>
+              <label className="relative text-sm text-indigo-600 font-medium cursor-pointer hover:text-indigo-700 transition">
+                カレンダーから選択
+                <input
+                  type="date"
+                  value={isCustomDate ? scheduledDate : ""}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+              </label>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+              {dayChips.map((chip) => {
+                const isSelected = scheduledDate === chip.value;
+                return (
+                  <button
+                    key={chip.value}
+                    type="button"
+                    onClick={() => setScheduledDate(chip.value)}
+                    className={`flex-shrink-0 w-[72px] py-2 rounded-2xl border text-center transition ${
+                      isSelected
+                        ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white border-transparent font-bold"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="text-xs">{chip.label}</div>
+                    <div
+                      className={`text-xs mt-0.5 ${
+                        isSelected
+                          ? "text-white/80"
+                          : chip.weekday === "日"
+                            ? "text-red-500"
+                            : chip.weekday === "土"
+                              ? "text-blue-500"
+                              : "text-gray-400"
+                      }`}
+                    >
+                      {chip.weekday}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {isCustomDate && (
+              <p className="mt-2 text-sm text-indigo-600 font-medium">
+                選択中: {scheduledDate}
+              </p>
+            )}
           </div>
 
           <div>
             <label className={labelClass}>出勤予定時間</label>
-            <input
-              type="time"
-              value={scheduledTime}
-              onChange={(e) => setScheduledTime(e.target.value)}
-              className={inputClass}
-            />
+            <button
+              type="button"
+              onClick={() => setTimeSheetOpen(true)}
+              className={`${inputClass} flex items-center justify-between text-left ${
+                scheduledTime ? "text-gray-800" : "text-gray-400"
+              }`}
+            >
+              <span>{scheduledTime || "選択してください"}</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-gray-400"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
           </div>
 
           <button
             onClick={handleSubmit}
-            className="w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-3 rounded-2xl hover:opacity-90 transition"
+            disabled={!isFormValid || submitting}
+            className="w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-3 rounded-2xl hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            登録
+            {submitting ? "登録中..." : "登録"}
           </button>
         </div>
       </div>
+
+      {sheetOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          onClick={() => {
+            setSheetOpen(false);
+            setSearchQuery("");
+          }}
+        >
+          <div
+            className="w-full max-w-2xl bg-white rounded-t-3xl shadow-xl max-h-[70vh] flex flex-col animate-[slideUp_0.2s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-gray-300 rounded-full" />
+            </div>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h2 className="text-base font-bold text-gray-800">女の子を選択</h2>
+            </div>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <div className="relative">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="名前で検索"
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl outline-none focus:border-indigo-500 transition"
+                />
+              </div>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {girls.length === 0 ? (
+                <p className="text-gray-500 text-center py-8 text-sm">
+                  登録された女の子がいません
+                </p>
+              ) : (
+                (() => {
+                  const filtered = girls.filter((g) =>
+                    g.name.toLowerCase().includes(searchQuery.toLowerCase()),
+                  );
+                  if (filtered.length === 0) {
+                    return (
+                      <p className="text-gray-500 text-center py-8 text-sm">
+                        該当する女の子がいません
+                      </p>
+                    );
+                  }
+                  return filtered.map((girl) => (
+                    <button
+                      key={girl.id}
+                      onClick={() => {
+                        setSelectedGirlId(girl.id);
+                        setSheetOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className={`w-full px-5 py-4 text-left text-sm border-b border-gray-100 transition ${
+                        selectedGirlId === girl.id
+                          ? "bg-indigo-50 text-indigo-700 font-bold"
+                          : "text-gray-800 hover:bg-gray-50"
+                      }`}
+                    >
+                      {girl.name}
+                    </button>
+                  ));
+                })()
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setSheetOpen(false);
+                setSearchQuery("");
+              }}
+              className="px-5 py-4 text-sm text-gray-600 border-t border-gray-100 hover:bg-gray-50 transition"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
+      {timeSheetOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          onClick={() => setTimeSheetOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl bg-white rounded-t-3xl shadow-xl max-h-[70vh] flex flex-col animate-[slideUp_0.2s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-gray-300 rounded-full" />
+            </div>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h2 className="text-base font-bold text-gray-800">
+                出勤予定時間を選択
+              </h2>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {timeOptions.map((time) => (
+                <button
+                  key={time}
+                  onClick={() => {
+                    setScheduledTime(time);
+                    setTimeSheetOpen(false);
+                  }}
+                  className={`w-full px-5 py-4 text-left text-sm border-b border-gray-100 transition ${
+                    scheduledTime === time
+                      ? "bg-indigo-50 text-indigo-700 font-bold"
+                      : "text-gray-800 hover:bg-gray-50"
+                  }`}
+                >
+                  {time}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setTimeSheetOpen(false)}
+              className="px-5 py-4 text-sm text-gray-600 border-t border-gray-100 hover:bg-gray-50 transition"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
