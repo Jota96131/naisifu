@@ -6,7 +6,30 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 type LineEvent = {
   type: string;
   source: { userId: string };
+  replyToken?: string;
   message?: { type: string; text: string };
+};
+
+const replyMessage = async (replyToken: string, text: string) => {
+  const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!accessToken) {
+    console.log("LINE_CHANNEL_ACCESS_TOKEN が設定されていません");
+    return;
+  }
+  const res = await fetch("https://api.line.me/v2/bot/message/reply", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      replyToken,
+      messages: [{ type: "text", text }],
+    }),
+  });
+  if (!res.ok) {
+    console.log("LINE返信失敗:", await res.text());
+  }
 };
 
 export async function POST(request: Request) {
@@ -18,6 +41,18 @@ export async function POST(request: Request) {
     // 友だち追加イベント
     if (event.type === "follow") {
       console.log("友だち追加されたユーザーID:", event.source.userId);
+      if (event.replyToken) {
+        await replyMessage(
+          event.replyToken,
+          [
+            "友達追加ありがとうございます🌙",
+            "",
+            "お店から渡されたQRコードを読み取って、登録を完了してください。",
+            "",
+            "登録が完了すると、出勤前にリマインドが届きます。",
+          ].join("\n"),
+        );
+      }
       continue;
     }
 
