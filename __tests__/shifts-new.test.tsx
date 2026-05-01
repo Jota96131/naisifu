@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ShiftNewPage from "@/app/shifts/new/page";
 import { supabase } from "@/lib/supabase";
 
-// ① Supabaseをまるごと偽物に差し替え
 jest.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
@@ -12,13 +11,11 @@ jest.mock("@/lib/supabase", () => ({
   },
 }));
 
-// ② useRouterを偽物に差し替え
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-// ③ 型キャスト
 const mockGetUser = supabase.auth.getUser as jest.Mock;
 const mockFrom = supabase.from as jest.Mock;
 
@@ -27,7 +24,6 @@ describe("シフト登録ページ（バリデーション）", () => {
     jest.clearAllMocks();
   });
 
-  // staffテーブル用
   const mockStaffChain = () => ({
     select: jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnValue({
@@ -38,7 +34,6 @@ describe("シフト登録ページ（バリデーション）", () => {
     }),
   });
 
-  // girlsテーブル取得用
   const mockGirlsSelectChain = (girls: { id: string; name: string }[]) => ({
     select: jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnValue({
@@ -50,7 +45,6 @@ describe("シフト登録ページ（バリデーション）", () => {
     }),
   });
 
-  // 初期表示セットアップ
   const setupInitialMocks = () => {
     mockGetUser.mockResolvedValue({
       data: { user: { email: "test@example.com" } },
@@ -64,79 +58,79 @@ describe("シフト登録ページ（バリデーション）", () => {
     );
   };
 
-  // ============================
-  // テスト① 何も入力せずに登録ボタンを押してもinsertが呼ばれない
-  // ============================
+  // ボトムシートで女の子を選択するヘルパー
+  // 「女の子」「出勤予定時間」の2箇所に「選択してください」があるので、最初の方（女の子）を押す
+  const selectGirl = async (name: string) => {
+    const triggers = screen.getAllByRole("button", { name: "選択してください" });
+    fireEvent.click(triggers[0]);
+    await waitFor(() => {
+      expect(screen.getByText("女の子を選択")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name }));
+  };
+
+  // 日付chipsから日付を選択するヘルパー（「今日」を選ぶ）
+  const selectToday = () => {
+    fireEvent.click(screen.getByRole("button", { name: /今日/ }));
+  };
+
+  // 時間ボトムシートから選択するヘルパー
+  // selectGirl 後は女の子側のtriggerは選択済み名前に変わるので、残った「選択してください」が時間
+  const selectTime = async (time: string) => {
+    fireEvent.click(screen.getByRole("button", { name: "選択してください" }));
+    await waitFor(() => {
+      expect(screen.getByText("出勤予定時間を選択")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: time }));
+  };
+
   test("何も入力せずに登録ボタンを押してもinsertが呼ばれない", async () => {
     setupInitialMocks();
 
     render(<ShiftNewPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("さくら")).toBeInTheDocument();
+      expect(screen.getByText("シフト登録")).toBeInTheDocument();
     });
 
     mockFrom.mockClear();
 
-    // 穴埋め: 登録ボタンをクリック
-    fireEvent.click(screen.getByText("登録"));
+    fireEvent.click(screen.getByRole("button", { name: "登録" }));
 
-    // 穴埋め: mockFromが呼ばれていないことを確認
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  // ============================
-  // テスト② 女の子だけ選択して日付・時間が空のまま登録してもinsertが呼ばれない
-  // ============================
   test("女の子だけ選択して登録してもinsertが呼ばれない", async () => {
     setupInitialMocks();
 
     render(<ShiftNewPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("さくら")).toBeInTheDocument();
+      expect(screen.getByText("シフト登録")).toBeInTheDocument();
     });
 
-    // 女の子を選択
-    fireEvent.change(screen.getByRole("combobox"), {
-      target: { value: "girl-1" },
-    });
+    await selectGirl("さくら");
 
     mockFrom.mockClear();
 
-    // 穴埋め: 登録ボタンをクリック
-    fireEvent.click(screen.getByText("登録"));
+    fireEvent.click(screen.getByRole("button", { name: "登録" }));
 
-    // 穴埋め: mockFromが呼ばれていないことを確認
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  // ============================
-  // テスト③ 全部入力して登録するとinsertが呼ばれる
-  // ============================
   test("全項目入力して登録するとinsertが呼ばれる", async () => {
     setupInitialMocks();
 
     render(<ShiftNewPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("さくら")).toBeInTheDocument();
+      expect(screen.getByText("シフト登録")).toBeInTheDocument();
     });
 
-    // 女の子を選択
-    fireEvent.change(screen.getByRole("combobox"), {
-      target: { value: "girl-1" },
-    });
+    await selectGirl("さくら");
+    selectToday();
+    await selectTime("20:00");
 
-    // 日付を入力（type="date" のinput）
-    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
-    fireEvent.change(dateInput, { target: { value: "2026-04-22" } });
-
-    // 時間を入力（type="time" のinput）
-    const timeInput = document.querySelector('input[type="time"]') as HTMLInputElement;
-    fireEvent.change(timeInput, { target: { value: "20:00" } });
-
-    // 登録後のモックをセット
     mockFrom
       .mockReturnValueOnce({
         insert: jest.fn().mockReturnValue({
@@ -152,16 +146,13 @@ describe("シフト登録ページ（バリデーション）", () => {
         insert: jest.fn().mockResolvedValue({ error: null }),
       });
 
-    // 穴埋め: 登録ボタンをクリック
-    fireEvent.click(screen.getByText("登録"));
+    fireEvent.click(screen.getByRole("button", { name: "登録" }));
 
-    // 穴埋め: shiftsテーブルのinsertが呼ばれたことを確認
     await waitFor(() => {
       expect(mockFrom).toHaveBeenCalledWith("shifts");
     });
   });
 
-  // バグ再発防止：staffDataがnullでもクラッシュしない
   test("staffテーブルにユーザーが未登録でもクラッシュしない", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { email: "unknown@example.com" } },

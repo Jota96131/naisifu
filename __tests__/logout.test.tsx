@@ -17,14 +17,16 @@ describe("ログアウト", () => {
 
   test("ログアウトボタンが表示される", () => {
     render(<LogoutPage />);
-    expect(screen.getByText("ログアウト")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "ログアウト" }),
+    ).toBeInTheDocument();
   });
 
   test("ログアウトボタンを押すとsignOutが呼ばれる", async () => {
     (supabase.auth.signOut as jest.Mock).mockResolvedValue({});
 
     render(<LogoutPage />);
-    fireEvent.click(screen.getByText("ログアウト"));
+    fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
 
     await waitFor(() => {
       expect(supabase.auth.signOut).toHaveBeenCalled();

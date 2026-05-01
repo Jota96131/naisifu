@@ -261,13 +261,13 @@ describe("シフト一覧ページ", () => {
 
     render(<ShiftsPage />);
 
-    // 穴埋め: 「当日」ボタンが青色のクラスを持っていることを確認
+    // 「当日」ボタンが選択中（グラデーション）クラスを持っていることを確認
     const todayButton = screen.getByText("当日");
-    expect(todayButton.className).toContain("bg-blue-600");
+    expect(todayButton.className).toContain("bg-gradient-to-r");
 
-    // 穴埋め: 「今週」ボタンがグレーのクラスを持っていることを確認
+    // 「今週」ボタンが非選択（白背景）クラスを持っていることを確認
     const weekButton = screen.getByText("今週");
-    expect(weekButton.className).toContain("bg-gray-200");
+    expect(weekButton.className).toContain("bg-white");
   });
 
   // ============================
@@ -295,13 +295,13 @@ describe("シフト一覧ページ", () => {
     fireEvent.click(screen.getByText("今週"));
 
     await waitFor(() => {
-      // 穴埋め: 「今週」ボタンが青色になること
+      // 「今週」ボタンが選択中（グラデーション）クラスを持つこと
       const weekButton = screen.getByText("今週");
-      expect(weekButton.className).toContain("bg-blue-600");
+      expect(weekButton.className).toContain("bg-gradient-to-r");
 
-      // 穴埋め: 「当日」ボタンがグレーになること
+      // 「当日」ボタンが非選択（白背景）クラスを持つこと
       const todayButton = screen.getByText("当日");
-      expect(todayButton.className).toContain("bg-gray-200");
+      expect(todayButton.className).toContain("bg-white");
     });
   });
 
