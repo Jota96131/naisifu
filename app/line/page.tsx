@@ -42,12 +42,11 @@ export default function LinePage() {
     };
   }, []);
 
-  const [origin, setOrigin] = useState("");
-  useEffect(() => {
-    setOrigin(
-      process.env.NEXT_PUBLIC_APP_ORIGIN ?? window.location.origin,
-    );
-  }, []);
+  const [origin] = useState(() =>
+    typeof window === "undefined"
+      ? (process.env.NEXT_PUBLIC_APP_ORIGIN ?? "")
+      : (process.env.NEXT_PUBLIC_APP_ORIGIN ?? window.location.origin),
+  );
 
   const registerUrl =
     storeCode && origin ? `${origin}/liff/select?code=${storeCode}` : "";
