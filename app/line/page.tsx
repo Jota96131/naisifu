@@ -42,9 +42,15 @@ export default function LinePage() {
     };
   }, []);
 
-  const registerUrl = storeCode
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/liff/select?code=${storeCode}`
-    : "";
+  const [origin, setOrigin] = useState("");
+  useEffect(() => {
+    setOrigin(
+      process.env.NEXT_PUBLIC_APP_ORIGIN ?? window.location.origin,
+    );
+  }, []);
+
+  const registerUrl =
+    storeCode && origin ? `${origin}/liff/select?code=${storeCode}` : "";
 
   return (
     <div className="min-h-screen bg-white">

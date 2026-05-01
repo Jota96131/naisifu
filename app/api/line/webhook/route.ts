@@ -1,5 +1,6 @@
 // LINE Webhookの受け口
 // LINEプラットフォームから、友達追加・メッセージなどのイベントがPOSTで届く
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { parseAttendance } from "@/lib/parse-attendance";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -10,10 +11,26 @@ type LineEvent = {
   message?: { type: string; text: string };
 };
 
+const verifySignature = (body: string, signature: string | null): boolean => {
+  if (!signature) return false;
+  const channelSecret = process.env.LINE_CHANNEL_SECRET;
+  if (!channelSecret) {
+    console.error("LINE_CHANNEL_SECRET が設定されていません");
+    return false;
+  }
+  const expected = createHmac("sha256", channelSecret)
+    .update(body)
+    .digest("base64");
+  const expectedBuf = Buffer.from(expected);
+  const receivedBuf = Buffer.from(signature);
+  if (expectedBuf.length !== receivedBuf.length) return false;
+  return timingSafeEqual(expectedBuf, receivedBuf);
+};
+
 const replyMessage = async (replyToken: string, text: string) => {
   const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!accessToken) {
-    console.log("LINE_CHANNEL_ACCESS_TOKEN が設定されていません");
+    console.error("LINE_CHANNEL_ACCESS_TOKEN が設定されていません");
     return;
   }
   const res = await fetch("https://api.line.me/v2/bot/message/reply", {
@@ -28,12 +45,17 @@ const replyMessage = async (replyToken: string, text: string) => {
     }),
   });
   if (!res.ok) {
-    console.log("LINE返信失敗:", await res.text());
+    console.error("LINE返信失敗:", await res.text());
   }
 };
 
 export async function POST(request: Request) {
   const text = await request.text();
+  const signature = request.headers.get("x-line-signature");
+  if (!verifySignature(text, signature)) {
+    console.error("署名検証失敗");
+    return new Response("Unauthorized", { status: 401 });
+  }
   const body = text ? JSON.parse(text) : { events: [] };
   console.log("LINE Webhook受信:", JSON.stringify(body, null, 2));
 

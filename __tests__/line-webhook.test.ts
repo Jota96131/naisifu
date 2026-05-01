@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+import { createHmac } from "node:crypto";
 import { POST } from "@/app/api/line/webhook/route";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -15,9 +16,24 @@ jest.mock("@/lib/supabase-admin", () => ({
 // ② 型キャスト
 const mockFrom = supabaseAdmin.from as jest.Mock;
 
+const TEST_CHANNEL_SECRET = "test_channel_secret";
+
+const signedRequest = (body: object) => {
+  const text = JSON.stringify(body);
+  const signature = createHmac("sha256", TEST_CHANNEL_SECRET)
+    .update(text)
+    .digest("base64");
+  return new Request("http://localhost/api/line/webhook", {
+    method: "POST",
+    headers: { "x-line-signature": signature },
+    body: text,
+  });
+};
+
 describe("LINE Webhook", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.LINE_CHANNEL_SECRET = TEST_CHANNEL_SECRET;
   });
 
   // ここにテストを書いていく（次のステップで）
@@ -64,18 +80,15 @@ describe("LINE Webhook", () => {
       .mockReturnValueOnce(mockShiftsChain({ id: "9" }))
       .mockReturnValueOnce(mockAttendanceUpdateChain());
 
-    // LINEから来るリクエストを偽装
-    const request = new Request("http://localhost/api/line/webhook", {
-      method: "POST",
-      body: JSON.stringify({
-        events: [
-          {
-            type: "message",
-            source: { userId: "U123" },
-            message: { type: "text", text: "出勤" },
-          },
-        ],
-      }),
+    // LINEから来るリクエストを偽装（署名付き）
+    const request = signedRequest({
+      events: [
+        {
+          type: "message",
+          source: { userId: "U123" },
+          message: { type: "text", text: "出勤" },
+        },
+      ],
     });
 
     // POST関数を実行
@@ -96,17 +109,14 @@ describe("LINE Webhook", () => {
       .mockReturnValueOnce(mockShiftsChain({ id: "9" }))
       .mockReturnValueOnce(mockAttendanceUpdateChain());
 
-    const request = new Request("http://localhost/api/line/webhook", {
-      method: "POST",
-      body: JSON.stringify({
-        events: [
-          {
-            type: "message",
-            source: { userId: "U123" },
-            message: { type: "text", text: "欠勤" },
-          },
-        ],
-      }),
+    const request = signedRequest({
+      events: [
+        {
+          type: "message",
+          source: { userId: "U123" },
+          message: { type: "text", text: "欠勤" },
+        },
+      ],
     });
 
     const response = await POST(request);
@@ -118,17 +128,14 @@ describe("LINE Webhook", () => {
   // テスト③ 「こんにちは」など出勤/欠勤以外のメッセージはスキップされる
   // ============================
   test("出勤/欠勤以外のメッセージは Supabase を呼ばずにスキップされる", async () => {
-    const request = new Request("http://localhost/api/line/webhook", {
-      method: "POST",
-      body: JSON.stringify({
-        events: [
-          {
-            type: "message",
-            source: { userId: "U123" },
-            message: { type: "text", text: "こんにちは" },
-          },
-        ],
-      }),
+    const request = signedRequest({
+      events: [
+        {
+          type: "message",
+          source: { userId: "U123" },
+          message: { type: "text", text: "こんにちは" },
+        },
+      ],
     });
 
     const response = await POST(request);
@@ -136,6 +143,53 @@ describe("LINE Webhook", () => {
     // 検証：200で返ってきた（エラーじゃない）
     expect(response.status).toBe(200);
     // 検証：Supabaseは一度も呼ばれていない
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  // ============================
+  // テスト④ 署名が無いリクエストは 401 で拒否される
+  // ============================
+  test("署名なしのリクエストは 401 で拒否される", async () => {
+    const request = new Request("http://localhost/api/line/webhook", {
+      method: "POST",
+      body: JSON.stringify({
+        events: [
+          {
+            type: "message",
+            source: { userId: "U123" },
+            message: { type: "text", text: "出勤" },
+          },
+        ],
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(401);
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  // ============================
+  // テスト⑤ 不正な署名のリクエストは 401 で拒否される
+  // ============================
+  test("不正な署名のリクエストは 401 で拒否される", async () => {
+    const request = new Request("http://localhost/api/line/webhook", {
+      method: "POST",
+      headers: { "x-line-signature": "invalid_signature" },
+      body: JSON.stringify({
+        events: [
+          {
+            type: "message",
+            source: { userId: "U123" },
+            message: { type: "text", text: "出勤" },
+          },
+        ],
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(401);
     expect(mockFrom).not.toHaveBeenCalled();
   });
 });

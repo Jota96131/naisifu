@@ -14,7 +14,7 @@ function LiffSelectInner() {
   const code = searchParams.get("code");
   const [storeName, setStoreName] = useState("");
   const [girls, setGirls] = useState<Girl[]>([]);
-  const [userId, setUserId] = useState("");
+  const [idToken, setIdToken] = useState<string | null>(null);
   const [selectedGirlId, setSelectedGirlId] = useState("");
   const [phase, setPhase] = useState<
     "init" | "ready" | "submitting" | "done" | "error"
@@ -32,13 +32,18 @@ function LiffSelectInner() {
 
         await liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! });
         if (!liff.isLoggedIn()) {
-          liff.login();
+          liff.login({ redirectUri: window.location.href });
           return;
         }
-        const profile = await liff.getProfile();
-        setUserId(profile.userId);
+        const token = liff.getIDToken();
+        if (!token) {
+          throw new Error("IDトークンを取得できませんでした");
+        }
+        setIdToken(token);
 
-        const res = await fetch(`/api/line/select?code=${code}`);
+        const res = await fetch(`/api/line/select?code=${code}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error ?? "店舗情報の取得に失敗しました");
@@ -56,14 +61,17 @@ function LiffSelectInner() {
   }, [code]);
 
   const handleSubmit = async () => {
-    if (!selectedGirlId || phase === "submitting") return;
+    if (!selectedGirlId || phase === "submitting" || !idToken) return;
     setPhase("submitting");
     setErrorMessage("");
     try {
       const res = await fetch("/api/line/select", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, girlId: selectedGirlId, userId }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ code, girlId: selectedGirlId }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -73,6 +81,12 @@ function LiffSelectInner() {
     } catch (e) {
       setErrorMessage(String(e));
       setPhase("ready");
+    }
+  };
+
+  const handleClose = () => {
+    if (liff.isInClient()) {
+      liff.closeWindow();
     }
   };
 
@@ -152,9 +166,12 @@ function LiffSelectInner() {
             <p className="text-sm text-gray-500 mb-6">
               出勤前にLINEでリマインドが届きます
             </p>
-            <p className="text-xs text-gray-400">
-              この画面を閉じて大丈夫です
-            </p>
+            <button
+              onClick={handleClose}
+              className="w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-3 rounded-2xl hover:opacity-90 transition"
+            >
+              閉じる
+            </button>
           </div>
         )}
       </div>
