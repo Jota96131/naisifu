@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import liff from "@line/liff";
 
 type Girl = {
@@ -10,11 +9,10 @@ type Girl = {
 };
 
 function LiffSelectInner() {
-  const searchParams = useSearchParams();
-  const code = searchParams.get("code");
   const [storeName, setStoreName] = useState("");
   const [girls, setGirls] = useState<Girl[]>([]);
   const [idToken, setIdToken] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
   const [selectedGirlId, setSelectedGirlId] = useState("");
   const [phase, setPhase] = useState<
     "init" | "ready" | "submitting" | "done" | "error"
@@ -24,24 +22,28 @@ function LiffSelectInner() {
   useEffect(() => {
     const init = async () => {
       try {
-        if (!code) {
-          setErrorMessage("店舗コードが指定されていません");
-          setPhase("error");
-          return;
-        }
-
         await liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! });
         if (!liff.isLoggedIn()) {
           liff.login({ redirectUri: window.location.href });
           return;
         }
+
+        const params = new URLSearchParams(window.location.search);
+        const codeParam = params.get("code");
+        if (!codeParam) {
+          setErrorMessage("店舗コードが指定されていません");
+          setPhase("error");
+          return;
+        }
+        setCode(codeParam);
+
         const token = liff.getIDToken();
         if (!token) {
           throw new Error("IDトークンを取得できませんでした");
         }
         setIdToken(token);
 
-        const res = await fetch(`/api/line/select?code=${code}`, {
+        const res = await fetch(`/api/line/select?code=${codeParam}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
@@ -58,7 +60,7 @@ function LiffSelectInner() {
       }
     };
     init();
-  }, [code]);
+  }, []);
 
   const handleSubmit = async () => {
     if (!selectedGirlId || phase === "submitting" || !idToken) return;
