@@ -157,6 +157,7 @@ export default function ShiftNewPage() {
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
+              aria-label="女の子を選択"
               className={`${inputClass} flex items-center justify-between text-left ${
                 selectedGirl ? "text-gray-800" : "text-gray-400"
               }`}
@@ -238,6 +239,7 @@ export default function ShiftNewPage() {
             <button
               type="button"
               onClick={() => setTimeSheetOpen(true)}
+              aria-label="出勤予定時間を選択"
               className={`${inputClass} flex items-center justify-between text-left ${
                 scheduledTime ? "text-gray-800" : "text-gray-400"
               }`}

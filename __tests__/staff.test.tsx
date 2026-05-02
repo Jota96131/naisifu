@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import StaffPage from "@/app/staff/page";
 import { supabase } from "@/lib/supabase";
 
-// ① Supabaseをまるごと偽物に差し替え
 jest.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
@@ -12,7 +11,11 @@ jest.mock("@/lib/supabase", () => ({
   },
 }));
 
-// ② 型キャスト
+const mockPush = jest.fn();
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 const mockGetUser = supabase.auth.getUser as jest.Mock;
 const mockFrom = supabase.from as jest.Mock;
 
@@ -20,8 +23,6 @@ describe("黒服一覧ページ", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
-
-  // === チェーンモックを作るヘルパー関数 ===
 
   const mockStaffStoreIdChain = () => ({
     select: jest.fn().mockReturnValue({
@@ -33,7 +34,9 @@ describe("黒服一覧ページ", () => {
     }),
   });
 
-  const mockStaffSelectChain = (staffList: { id: string; name: string }[]) => ({
+  const mockStaffSelectChain = (
+    staffList: { id: string; name: string; email?: string }[],
+  ) => ({
     select: jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnValue({
         order: jest.fn().mockResolvedValue({
@@ -54,7 +57,9 @@ describe("黒服一覧ページ", () => {
     }),
   });
 
-  const setupInitialMocks = (staffList: { id: string; name: string }[]) => {
+  const setupInitialMocks = (
+    staffList: { id: string; name: string; email?: string }[],
+  ) => {
     mockGetUser.mockResolvedValue({
       data: { user: { email: "test@example.com" } },
     });
@@ -64,11 +69,10 @@ describe("黒服一覧ページ", () => {
       .mockReturnValueOnce(mockStaffSelectChain(staffList));
   };
 
-  // ① 一覧表示テスト
   test("ページ表示時にスタッフ一覧が表示される", async () => {
     setupInitialMocks([
-      { id: "1", name: "田中" },
-      { id: "2", name: "佐藤" },
+      { id: "1", name: "田中", email: "tanaka@example.com" },
+      { id: "2", name: "佐藤", email: "sato@example.com" },
     ]);
 
     render(<StaffPage />);
@@ -79,9 +83,8 @@ describe("黒服一覧ページ", () => {
     });
   });
 
-  // ② 登録テスト
   test("名前を入力して登録ボタンを押すと登録される", async () => {
-    setupInitialMocks([{ id: "1", name: "田中" }]);
+    setupInitialMocks([{ id: "1", name: "田中", email: "tanaka@example.com" }]);
 
     render(<StaffPage />);
 
@@ -98,26 +101,25 @@ describe("黒服一覧ページ", () => {
       .mockReturnValueOnce(mockStaffStoreIdChain())
       .mockReturnValueOnce(
         mockStaffSelectChain([
-          { id: "1", name: "田中" },
-          { id: "2", name: "山田" },
+          { id: "1", name: "田中", email: "tanaka@example.com" },
+          { id: "2", name: "山田", email: "yamada@example.com" },
         ]),
       );
 
     fireEvent.change(screen.getByPlaceholderText("名前を入力"), {
       target: { value: "山田" },
     });
-    fireEvent.click(screen.getByText("登録"));
+    fireEvent.click(screen.getByRole("button", { name: "登録" }));
 
     await waitFor(() => {
       expect(screen.getByText("山田")).toBeInTheDocument();
     });
   });
 
-  // ③ 削除テスト
-  test("削除ボタンを押すと削除される", async () => {
+  test("削除ボタンを押して削除モーダルで確定すると削除される", async () => {
     setupInitialMocks([
-      { id: "1", name: "田中" },
-      { id: "2", name: "佐藤" },
+      { id: "1", name: "田中", email: "tanaka@example.com" },
+      { id: "2", name: "佐藤", email: "sato@example.com" },
     ]);
 
     render(<StaffPage />);
@@ -127,20 +129,18 @@ describe("黒服一覧ページ", () => {
       expect(screen.getByText("佐藤")).toBeInTheDocument();
     });
 
-    mockGetUser.mockResolvedValue({
-      data: { user: { email: "test@example.com" } },
-    });
     mockFrom
       .mockReturnValueOnce(mockStaffDeleteChain())
       .mockReturnValueOnce(mockStaffStoreIdChain())
       .mockReturnValueOnce(
         mockStaffSelectChain([
-          { id: "2", name: "佐藤" },
+          { id: "2", name: "佐藤", email: "sato@example.com" },
         ]),
       );
 
-    const deleteButtons = screen.getAllByText("削除");
-    fireEvent.click(deleteButtons[0]);
+    fireEvent.click(screen.getByRole("button", { name: "田中を削除" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "削除する" }));
 
     await waitFor(() => {
       expect(screen.queryByText("田中")).not.toBeInTheDocument();
@@ -148,9 +148,8 @@ describe("黒服一覧ページ", () => {
     });
   });
 
-  // ④ バリデーション：空文字
   test("名前が空のまま登録ボタンを押してもinsertが呼ばれない", async () => {
-    setupInitialMocks([{ id: "1", name: "田中" }]);
+    setupInitialMocks([{ id: "1", name: "田中", email: "tanaka@example.com" }]);
 
     render(<StaffPage />);
 
@@ -160,14 +159,13 @@ describe("黒服一覧ページ", () => {
 
     mockFrom.mockClear();
 
-    fireEvent.click(screen.getByText("登録"));
+    fireEvent.click(screen.getByRole("button", { name: "登録" }));
 
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  // ⑤ バリデーション：スペースのみ
   test("スペースだけ入力して登録ボタンを押してもinsertが呼ばれない", async () => {
-    setupInitialMocks([{ id: "1", name: "田中" }]);
+    setupInitialMocks([{ id: "1", name: "田中", email: "tanaka@example.com" }]);
 
     render(<StaffPage />);
 
@@ -180,16 +178,15 @@ describe("黒服一覧ページ", () => {
     fireEvent.change(screen.getByPlaceholderText("名前を入力"), {
       target: { value: "   " },
     });
-    fireEvent.click(screen.getByText("登録"));
+    fireEvent.click(screen.getByRole("button", { name: "登録" }));
 
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  // ⑥ RLS検証テスト
   test("自店舗のスタッフだけ表示され、他店舗のスタッフは表示されない", async () => {
     setupInitialMocks([
-      { id: "1", name: "田中" },
-      { id: "2", name: "佐藤" },
+      { id: "1", name: "田中", email: "tanaka@example.com" },
+      { id: "2", name: "佐藤", email: "sato@example.com" },
     ]);
 
     render(<StaffPage />);

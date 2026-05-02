@@ -132,6 +132,7 @@ export default function ShiftsPage() {
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setViewMode("today")}
+            aria-pressed={viewMode === "today"}
             className={
               viewMode === "today"
                 ? "flex-1 bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-2.5 rounded-2xl text-sm"
@@ -142,6 +143,7 @@ export default function ShiftsPage() {
           </button>
           <button
             onClick={() => setViewMode("week")}
+            aria-pressed={viewMode === "week"}
             className={
               viewMode === "week"
                 ? "flex-1 bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-2.5 rounded-2xl text-sm"
