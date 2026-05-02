@@ -42,14 +42,9 @@ export default function LinePage() {
     };
   }, []);
 
-  const [origin] = useState(() =>
-    typeof window === "undefined"
-      ? (process.env.NEXT_PUBLIC_APP_ORIGIN ?? "")
-      : (process.env.NEXT_PUBLIC_APP_ORIGIN ?? window.location.origin),
-  );
-
-  const registerUrl =
-    storeCode && origin ? `${origin}/liff/select?code=${storeCode}` : "";
+  const registerUrl = storeCode
+    ? `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID}?code=${storeCode}`
+    : "";
 
   return (
     <div className="min-h-screen bg-white">
