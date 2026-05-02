@@ -59,14 +59,14 @@ describe("シフト登録ページ（バリデーション）", () => {
   };
 
   // ボトムシートで女の子を選択するヘルパー
-  // 「女の子」「出勤予定時間」の2箇所に「選択してください」があるので、最初の方（女の子）を押す
   const selectGirl = async (name: string) => {
-    const triggers = screen.getAllByRole("button", { name: "選択してください" });
-    fireEvent.click(triggers[0]);
+    fireEvent.click(screen.getByRole("button", { name: "女の子を選択" }));
     await waitFor(() => {
       expect(screen.getByText("女の子を選択")).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole("button", { name }));
+    // ボトムシート内の女の子名ボタンをクリック
+    const sheetButtons = screen.getAllByRole("button", { name });
+    fireEvent.click(sheetButtons[sheetButtons.length - 1]);
   };
 
   // 日付chipsから日付を選択するヘルパー（「今日」を選ぶ）
@@ -75,9 +75,8 @@ describe("シフト登録ページ（バリデーション）", () => {
   };
 
   // 時間ボトムシートから選択するヘルパー
-  // selectGirl 後は女の子側のtriggerは選択済み名前に変わるので、残った「選択してください」が時間
   const selectTime = async (time: string) => {
-    fireEvent.click(screen.getByRole("button", { name: "選択してください" }));
+    fireEvent.click(screen.getByRole("button", { name: "出勤予定時間を選択" }));
     await waitFor(() => {
       expect(screen.getByText("出勤予定時間を選択")).toBeInTheDocument();
     });

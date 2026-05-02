@@ -41,6 +41,9 @@ describe("ログイン", () => {
     ).toBeInTheDocument();
   });
 
+  // jsdom 26 では window.location.href への代入が実ナビゲーションを試みて
+  // 値が反映されないため、リダイレクト先の検証は行わず API 呼び出しのみを検証する。
+  // リダイレクト動作の確認は実機/E2Eテストの領域。
   test("ログイン成功でsignInWithPasswordが呼ばれる", async () => {
     (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
       error: null,

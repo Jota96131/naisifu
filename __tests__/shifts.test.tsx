@@ -217,11 +217,11 @@ describe("シフト一覧ページ", () => {
     // 「出勤」ボタン押下後のモックをセット
     mockFrom.mockReturnValueOnce(mockAttendanceUpdateChain());
 
-    // 穴埋め: 「出勤」ボタンをクリック
     fireEvent.click(screen.getByText("出勤"));
 
-    // 穴埋め: attendanceテーブルのupdateが呼ばれたことを確認
-    expect(mockFrom).toHaveBeenCalledWith("attendance");
+    await waitFor(() => {
+      expect(mockFrom).toHaveBeenCalledWith("attendance");
+    });
   });
 
   // ============================
@@ -246,11 +246,11 @@ describe("シフト一覧ページ", () => {
 
     mockFrom.mockReturnValueOnce(mockAttendanceUpdateChain());
 
-    // 穴埋め: 「欠勤」ボタンをクリック
     fireEvent.click(screen.getByText("欠勤"));
 
-    // 穴埋め: attendanceテーブルのupdateが呼ばれたことを確認
-    expect(mockFrom).toHaveBeenCalledWith("attendance");
+    await waitFor(() => {
+      expect(mockFrom).toHaveBeenCalledWith("attendance");
+    });
   });
 
   // ============================
@@ -261,13 +261,19 @@ describe("シフト一覧ページ", () => {
 
     render(<ShiftsPage />);
 
-    // 「当日」ボタンが選択中（グラデーション）クラスを持っていることを確認
-    const todayButton = screen.getByText("当日");
-    expect(todayButton.className).toContain("bg-gradient-to-r");
+    // useEffect 内の setShifts が走り終わるのを待つ（act 警告防止）
+    await waitFor(() => {
+      expect(screen.getByText("シフトはありません")).toBeInTheDocument();
+    });
 
-    // 「今週」ボタンが非選択（白背景）クラスを持っていることを確認
-    const weekButton = screen.getByText("今週");
-    expect(weekButton.className).toContain("bg-white");
+    expect(screen.getByRole("button", { name: "当日" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "今週" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
   });
 
   // ============================
@@ -295,13 +301,14 @@ describe("シフト一覧ページ", () => {
     fireEvent.click(screen.getByText("今週"));
 
     await waitFor(() => {
-      // 「今週」ボタンが選択中（グラデーション）クラスを持つこと
-      const weekButton = screen.getByText("今週");
-      expect(weekButton.className).toContain("bg-gradient-to-r");
-
-      // 「当日」ボタンが非選択（白背景）クラスを持つこと
-      const todayButton = screen.getByText("当日");
-      expect(todayButton.className).toContain("bg-white");
+      expect(screen.getByRole("button", { name: "今週" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(screen.getByRole("button", { name: "当日" })).toHaveAttribute(
+        "aria-pressed",
+        "false",
+      );
     });
   });
 
