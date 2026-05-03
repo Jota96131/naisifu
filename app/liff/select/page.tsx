@@ -18,16 +18,11 @@ function LiffSelectInner() {
     "init" | "ready" | "submitting" | "done" | "error"
   >("init");
   const [errorMessage, setErrorMessage] = useState("");
-  const [debugUrl, setDebugUrl] = useState("");
-  const [debugSearch, setDebugSearch] = useState("");
 
   useEffect(() => {
     const init = async () => {
       try {
         await liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! });
-
-        setDebugUrl(window.location.href);
-        setDebugSearch(window.location.search);
 
         if (!liff.isLoggedIn()) {
           liff.login({ redirectUri: window.location.href });
@@ -113,17 +108,9 @@ function LiffSelectInner() {
         )}
 
         {phase === "error" && (
-          <>
-            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm">
-              {errorMessage}
-            </div>
-            <div className="mt-4 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-gray-700 text-xs break-all">
-              <p className="font-bold mb-1">DEBUG href:</p>
-              <p className="mb-2">{debugUrl}</p>
-              <p className="font-bold mb-1">DEBUG search:</p>
-              <p>{debugSearch}</p>
-            </div>
-          </>
+          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm">
+            {errorMessage}
+          </div>
         )}
 
         {(phase === "ready" || phase === "submitting") && (

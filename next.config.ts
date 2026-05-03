@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  allowedDevOrigins: ["wilma-unsmothered-nonabsolutistically.ngrok-free.dev"],
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
