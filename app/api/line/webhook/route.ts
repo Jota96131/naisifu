@@ -97,7 +97,7 @@ export async function POST(request: Request) {
         .from("girls")
         .select("id, name")
         .eq("line_user_id", lineUserId)
-        .single();
+        .maybeSingle();
 
       if (girlError || !girl) {
         console.log("該当する女の子が見つかりません:", lineUserId);
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
         .select("id")
         .eq("girl_id", girl.id)
         .eq("scheduled_date", today)
-        .single();
+        .maybeSingle();
 
       if (shiftError || !shift) {
         console.log("今日のシフトが見つかりません:", girl.name);

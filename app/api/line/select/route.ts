@@ -122,6 +122,16 @@ export async function POST(request: Request) {
     .select();
 
   if (updateError) {
+    // 23505 = PostgresのUNIQUE違反。同じLINEが既に別のgirlに紐付いている。
+    if (updateError.code === "23505") {
+      return new Response(
+        JSON.stringify({
+          error:
+            "このLINEアカウントは既に別の女の子で登録されています。お店に確認してください。",
+        }),
+        { status: 409 },
+      );
+    }
     return new Response(JSON.stringify({ error: updateError.message }), {
       status: 500,
     });

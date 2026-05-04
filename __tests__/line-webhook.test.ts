@@ -37,26 +37,26 @@ describe("LINE Webhook", () => {
   });
 
   // ここにテストを書いていく（次のステップで）
-  // girlsテーブル用: .select().eq().single()
+  // girlsテーブル用: .select().eq().maybeSingle()
   const mockGirlsChain = (girl: { id: string; name: string } | null) => ({
     select: jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnValue({
-        single: jest.fn().mockResolvedValue({
+        maybeSingle: jest.fn().mockResolvedValue({
           data: girl,
-          error: girl ? null : { message: "not found" },
+          error: null,
         }),
       }),
     }),
   });
 
-  // shiftsテーブル用: .select().eq().eq().single()
+  // shiftsテーブル用: .select().eq().eq().maybeSingle()
   const mockShiftsChain = (shift: { id: string } | null) => ({
     select: jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({
+          maybeSingle: jest.fn().mockResolvedValue({
             data: shift,
-            error: shift ? null : { message: "not found" },
+            error: null,
           }),
         }),
       }),

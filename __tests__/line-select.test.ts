@@ -65,6 +65,18 @@ const mockGirlsAtomicUpdate = (
   }),
 });
 
+const mockGirlsAtomicUpdateWithError = (
+  error: { code: string; message: string },
+) => ({
+  update: jest.fn().mockReturnValue({
+    eq: jest.fn().mockReturnValue({
+      is: jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue({ data: null, error }),
+      }),
+    }),
+  }),
+});
+
 describe("LINE Select API", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -194,6 +206,32 @@ describe("LINE Select API", () => {
       const response = await POST(request);
 
       expect(response.status).toBe(409);
+    });
+
+    test("UNIQUE違反（同一LINEが既に別のgirlに紐付き）なら 409", async () => {
+      mockVerify.mockResolvedValueOnce({ ok: true, userId: "U123" });
+      mockFrom
+        .mockReturnValueOnce(mockStoreSelect({ id: "store1", name: "A店" }))
+        .mockReturnValueOnce(
+          mockGirlSingle({ id: "girl1", store_id: "store1" }),
+        )
+        .mockReturnValueOnce(
+          mockGirlsAtomicUpdateWithError({
+            code: "23505",
+            message: "duplicate key value violates unique constraint",
+          }),
+        );
+
+      const request = new Request("http://localhost/api/line/select", {
+        method: "POST",
+        headers: { Authorization: "Bearer token" },
+        body: JSON.stringify({ code: "ABC12345", girlId: "girl1" }),
+      });
+      const response = await POST(request);
+      const json = await response.json();
+
+      expect(response.status).toBe(409);
+      expect(json.error).toContain("既に別の女の子で登録");
     });
 
     test("正常系：line_user_id が更新され 200", async () => {
