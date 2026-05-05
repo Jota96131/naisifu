@@ -1,11 +1,12 @@
 ---
-status: draft
+status: posted
+url: https://qiita.com/jota9613/items/1c8ad29f5cd7d8761ce7
 tags: Supabase, PostgreSQL, Next.js, エラーハンドリング, 個人開発
 twitter: |
   「DB側のUNIQUE制約」と「アプリ側のエラーハンドリング」はセットで初めて完成する話を書きました。
   片方だけだと「重複は防げるけどユーザーには『Internal Server Error』しか見えない」状態になります。
   #Supabase #個人開発
-  [ここにQiitaのURLを貼る]
+  https://qiita.com/jota9613/items/1c8ad29f5cd7d8761ce7
 ---
 
 # 【Supabase】UNIQUE制約は「壁」、エラーハンドリングは「壁にぶつかった人への張り紙」 — セットで初めて完成する話
