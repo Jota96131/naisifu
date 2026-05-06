@@ -153,7 +153,10 @@ export default function GirlsPage() {
             type="text"
             placeholder="名前を入力"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (errorMessage) setErrorMessage("");
+            }}
             className="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-2xl outline-none focus:border-indigo-500 transition"
           />
           <button
@@ -171,14 +174,12 @@ export default function GirlsPage() {
           </div>
         )}
 
-        <div className="mb-2" />
-
         {loading ? (
           <p className="text-gray-500 text-center py-8">読み込み中...</p>
         ) : girls.length === 0 ? (
           <p className="text-gray-500 text-center py-8">まだ登録されていません</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2 mt-4">
             {girls.map((girl) => (
               <li
                 key={girl.id}

@@ -152,6 +152,39 @@ describe("シフト登録ページ（バリデーション）", () => {
     });
   });
 
+  test("過去の日付を選択して登録するとエラーが表示されinsertが呼ばれない", async () => {
+    setupInitialMocks();
+
+    render(<ShiftNewPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("シフト登録")).toBeInTheDocument();
+    });
+
+    await selectGirl("さくら");
+
+    // カレンダーinputに過去日を直接セット（chip側はそもそも今日以降しか出ないので）
+    const dateInput = document.querySelector(
+      'input[type="date"]',
+    ) as HTMLInputElement;
+    const pastDate = "2020-01-01";
+    fireEvent.change(dateInput, { target: { value: pastDate } });
+
+    await selectTime("20:00");
+
+    mockFrom.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: "登録" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("過去の日付には登録できません"),
+      ).toBeInTheDocument();
+    });
+
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
   test("staffテーブルにユーザーが未登録でもクラッシュしない", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { email: "unknown@example.com" } },

@@ -199,8 +199,12 @@ export default function ShiftNewPage() {
                 カレンダーから選択
                 <input
                   type="date"
+                  min={formatLocalDate(new Date())}
                   value={isCustomDate ? scheduledDate : ""}
-                  onChange={(e) => setScheduledDate(e.target.value)}
+                  onChange={(e) => {
+                    setScheduledDate(e.target.value);
+                    if (errorMessage) setErrorMessage("");
+                  }}
                   className="absolute inset-0 opacity-0 cursor-pointer"
                 />
               </label>
@@ -212,7 +216,10 @@ export default function ShiftNewPage() {
                   <button
                     key={chip.value}
                     type="button"
-                    onClick={() => setScheduledDate(chip.value)}
+                    onClick={() => {
+                      setScheduledDate(chip.value);
+                      if (errorMessage) setErrorMessage("");
+                    }}
                     className={`flex-shrink-0 w-[72px] py-2 rounded-2xl border text-center transition ${
                       isSelected
                         ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white border-transparent font-bold"
