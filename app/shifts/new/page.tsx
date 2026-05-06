@@ -21,6 +21,7 @@ export default function ShiftNewPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [timeSheetOpen, setTimeSheetOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const fetchGirls = async () => {
@@ -88,7 +89,15 @@ export default function ShiftNewPage() {
 
   const handleSubmit = async () => {
     if (!isFormValid || submitting) return;
+
+    const today = formatLocalDate(new Date());
+    if (scheduledDate < today) {
+      setErrorMessage("過去の日付には登録できません");
+      return;
+    }
+
     setSubmitting(true);
+    setErrorMessage("");
     const { data: shiftData, error } = await supabase
       .from("shifts")
       .insert({
@@ -101,6 +110,7 @@ export default function ShiftNewPage() {
 
     if (error) {
       console.error("登録エラー:", error.message);
+      setErrorMessage("登録に失敗しました。時間をおいて再度お試しください");
       setSubmitting(false);
       return;
     }
@@ -261,6 +271,12 @@ export default function ShiftNewPage() {
               </svg>
             </button>
           </div>
+
+          {errorMessage && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm">
+              {errorMessage}
+            </div>
+          )}
 
           <button
             onClick={handleSubmit}
