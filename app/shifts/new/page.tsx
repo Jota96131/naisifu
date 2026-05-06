@@ -21,6 +21,7 @@ export default function ShiftNewPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [timeSheetOpen, setTimeSheetOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const fetchGirls = async () => {
@@ -88,7 +89,15 @@ export default function ShiftNewPage() {
 
   const handleSubmit = async () => {
     if (!isFormValid || submitting) return;
+
+    const today = formatLocalDate(new Date());
+    if (scheduledDate < today) {
+      setErrorMessage("過去の日付には登録できません");
+      return;
+    }
+
     setSubmitting(true);
+    setErrorMessage("");
     const { data: shiftData, error } = await supabase
       .from("shifts")
       .insert({
@@ -101,6 +110,7 @@ export default function ShiftNewPage() {
 
     if (error) {
       console.error("登録エラー:", error.message);
+      setErrorMessage("登録に失敗しました。時間をおいて再度お試しください");
       setSubmitting(false);
       return;
     }
@@ -189,8 +199,12 @@ export default function ShiftNewPage() {
                 カレンダーから選択
                 <input
                   type="date"
+                  min={formatLocalDate(new Date())}
                   value={isCustomDate ? scheduledDate : ""}
-                  onChange={(e) => setScheduledDate(e.target.value)}
+                  onChange={(e) => {
+                    setScheduledDate(e.target.value);
+                    if (errorMessage) setErrorMessage("");
+                  }}
                   className="absolute inset-0 opacity-0 cursor-pointer"
                 />
               </label>
@@ -202,7 +216,10 @@ export default function ShiftNewPage() {
                   <button
                     key={chip.value}
                     type="button"
-                    onClick={() => setScheduledDate(chip.value)}
+                    onClick={() => {
+                      setScheduledDate(chip.value);
+                      if (errorMessage) setErrorMessage("");
+                    }}
                     className={`flex-shrink-0 w-[72px] py-2 rounded-2xl border text-center transition ${
                       isSelected
                         ? "bg-gradient-to-r from-indigo-600 to-sky-500 text-white border-transparent font-bold"
@@ -261,6 +278,12 @@ export default function ShiftNewPage() {
               </svg>
             </button>
           </div>
+
+          {errorMessage && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm">
+              {errorMessage}
+            </div>
+          )}
 
           <button
             onClick={handleSubmit}

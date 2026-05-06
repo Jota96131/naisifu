@@ -433,6 +433,129 @@ describe("女の子一覧ページ", () => {
     });
   });
 
+  // ⑭-2 エラーバナー：登録失敗時に画面に表示される
+  test("登録失敗時にエラーバナーが画面に表示される", async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    setupInitialMocks([{ id: "1", name: "さくら" }]);
+
+    render(<GirlsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("さくら")).toBeInTheDocument();
+    });
+
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "test@example.com" } },
+    });
+    mockFrom
+      .mockReturnValueOnce(mockStaffChain())
+      .mockReturnValueOnce({
+        insert: jest.fn().mockResolvedValue({
+          error: { message: "登録エラー" },
+        }),
+      });
+
+    fireEvent.change(screen.getByPlaceholderText("名前を入力"), {
+      target: { value: "みさき" },
+    });
+    fireEvent.click(screen.getByText("登録"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("登録に失敗しました。時間をおいて再度お試しください"),
+      ).toBeInTheDocument();
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  // ⑭-3 エラーバナー：削除失敗時に画面に表示される
+  test("削除失敗時にエラーバナーが画面に表示される", async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    setupInitialMocks([
+      { id: "1", name: "さくら" },
+      { id: "2", name: "ひなた" },
+    ]);
+
+    render(<GirlsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("さくら")).toBeInTheDocument();
+    });
+
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    mockFrom.mockReturnValueOnce({
+      delete: jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({
+          error: { message: "削除エラー" },
+        }),
+      }),
+    });
+
+    const deleteButtons = screen.getAllByText("削除");
+    fireEvent.click(deleteButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText("削除に失敗しました")).toBeInTheDocument();
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  // ⑭-4 エラーバナー：入力で消える
+  test("エラーバナー表示後、名前を入力するとバナーが消える", async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    setupInitialMocks([{ id: "1", name: "さくら" }]);
+
+    render(<GirlsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("さくら")).toBeInTheDocument();
+    });
+
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "test@example.com" } },
+    });
+    mockFrom
+      .mockReturnValueOnce(mockStaffChain())
+      .mockReturnValueOnce({
+        insert: jest.fn().mockResolvedValue({
+          error: { message: "登録エラー" },
+        }),
+      });
+
+    fireEvent.change(screen.getByPlaceholderText("名前を入力"), {
+      target: { value: "みさき" },
+    });
+    fireEvent.click(screen.getByText("登録"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("登録に失敗しました。時間をおいて再度お試しください"),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText("名前を入力"), {
+      target: { value: "みさきこ" },
+    });
+
+    expect(
+      screen.queryByText("登録に失敗しました。時間をおいて再度お試しください"),
+    ).not.toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore();
+  });
+
   // ⑮ エラーハンドリング：登録後のfetchGirlsでエラー
   test("登録成功後のfetchGirlsでエラーが発生してもクラッシュしない", async () => {
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
