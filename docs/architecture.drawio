@@ -1,0 +1,186 @@
+<mxfile>
+  <diagram name="Architecture" id="arch">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" background="#FFFFFF">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ===== ボーイ（左上 / CI/CD の左端 x=60 に揃える） ===== -->
+        <mxCell id="boy_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FFB74D;strokeWidth=2;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="60" y="40" width="320" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="boy_label" value="ボーイ" style="text;html=1;align=center;verticalAlign=top;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="180" y="50" width="80" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="boy_icon" value="💻" style="text;html=1;align=center;fontSize=44;" vertex="1" parent="1">
+          <mxGeometry x="195" y="78" width="50" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="boy_sub" value="ブラウザで管理" style="text;html=1;align=center;fontSize=11;fontColor=#999;" vertex="1" parent="1">
+          <mxGeometry x="170" y="130" width="100" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== 女の子（右上 / Supabase の右端 x=840 に揃える） ===== -->
+        <mxCell id="girl_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#F48FB1;strokeWidth=2;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="460" y="40" width="380" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="girl_label" value="女の子" style="text;html=1;align=center;verticalAlign=top;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="610" y="50" width="80" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="girl_icon" value="📱" style="text;html=1;align=center;fontSize=44;" vertex="1" parent="1">
+          <mxGeometry x="625" y="78" width="50" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="girl_sub" value="LINEアプリで返信" style="text;html=1;align=center;fontSize=11;fontColor=#999;" vertex="1" parent="1">
+          <mxGeometry x="590" y="130" width="120" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== ボーイ → Vercel 矢印 ===== -->
+        <mxCell id="arrow_boy_vercel" value="HTTPS / 管理画面" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;entryX=0.3;entryY=0;strokeColor=#FF9800;strokeWidth=2;fontSize=12;fontColor=#E65100;" edge="1" parent="1" source="boy_box" target="vercel_zone">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== 女の子 → LINE Platform 矢印 ===== -->
+        <mxCell id="arrow_girl_line" value="LINE / LIFF" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;entryX=0.7;entryY=0;strokeColor=#E91E63;strokeWidth=2;fontSize=12;fontColor=#C2185B;" edge="1" parent="1" source="girl_box" target="line_zone">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== CI/CD ゾーン（左中段） ===== -->
+        <mxCell id="cicd_zone" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#CE93D8;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="260" width="320" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="cicd_label" value="CI/CD" style="text;html=1;align=center;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#7B61FF;" vertex="1" parent="1">
+          <mxGeometry x="180" y="270" width="70" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="developer" value="👨‍💻&lt;br&gt;Developer" style="text;html=1;align=center;fontSize=11;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="85" y="305" width="80" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="github_actions_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CE93D8;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="195" y="300" width="170" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="github_actions_icon" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAlign=center;image=https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png;" vertex="1" parent="1">
+          <mxGeometry x="210" y="310" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="github_actions_text" value="GitHub Actions" style="text;html=1;align=left;fontSize=12;fontColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="315" width="110" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="github_actions_sub" value="lint → test → build" style="text;html=1;align=left;fontSize=9;fontColor=#999;" vertex="1" parent="1">
+          <mxGeometry x="250" y="335" width="120" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow_dev_gh" value="git push" style="edgeStyle=entityRelationEdgeStyle;rounded=1;strokeColor=#999999;strokeWidth=1;fontSize=10;fontColor=#666666;" edge="1" parent="1" source="developer" target="github_actions_box">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== Vercel ゾーン（中央） ===== -->
+        <mxCell id="vercel_zone" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#000000;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="260" width="320" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="vercel_label" value="▲ Vercel" style="text;html=1;align=center;verticalAlign=top;fontSize=14;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="555" y="270" width="90" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- Next.js -->
+        <mxCell id="nextjs_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="460" y="305" width="280" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="nextjs_text" value="&lt;b style=&quot;font-size:13px&quot;&gt;⚡ Next.js&lt;/b&gt; (App Router)&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#666&quot;&gt;管理画面 / LIFFページ&lt;/font&gt;" style="text;html=1;align=center;fontSize=12;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="465" y="315" width="270" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- API Routes -->
+        <mxCell id="api_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="460" y="380" width="160" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="api_text" value="&lt;b&gt;🔌 API Routes&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;LINE Webhook&lt;br&gt;LIFF token検証&lt;/font&gt;" style="text;html=1;align=center;fontSize=12;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="465" y="390" width="150" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Vercel Cron -->
+        <mxCell id="cron_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="630" y="380" width="110" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="cron_text" value="&lt;b&gt;⏰ Cron&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;毎朝 16:00 JST&lt;br&gt;リマインド送信&lt;/font&gt;" style="text;html=1;align=center;fontSize=12;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="635" y="390" width="100" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- CI/CD → Vercel デプロイ矢印 -->
+        <mxCell id="arrow_cicd_vercel" value="Deploy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#999999;strokeWidth=1;fontSize=11;fontColor=#666666;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="github_actions_box" target="vercel_zone">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== LINE Platform ゾーン（左下） ===== -->
+        <mxCell id="line_zone" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#06C755;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="540" width="340" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="line_label_zone" value="LINE Platform" style="text;html=1;align=center;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#06C755;" vertex="1" parent="1">
+          <mxGeometry x="180" y="550" width="100" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- Messaging API -->
+        <mxCell id="messaging_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#06C755;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="585" width="145" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="messaging_text" value="&lt;b&gt;💬 Messaging API&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;Push: リマインド&lt;br&gt;Webhook: 返信受信&lt;/font&gt;" style="text;html=1;align=center;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="85" y="592" width="135" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- LIFF -->
+        <mxCell id="liff_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#06C755;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="240" y="585" width="140" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="liff_text" value="&lt;b&gt;🔗 LIFF&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;LINEアプリ内ブラウザ&lt;br&gt;line_user_id 紐付け&lt;/font&gt;" style="text;html=1;align=center;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="245" y="592" width="130" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- LINE公式アカウント -->
+        <mxCell id="official_box" value="🟢 &lt;b&gt;LINE公式アカウント&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;店舗ごとに発行&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#06C755;strokeWidth=1;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="120" y="675" width="220" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== Supabase ゾーン（右下） ===== -->
+        <mxCell id="supabase_zone" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#81C784;strokeWidth=2;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="460" y="540" width="380" height="240" as="geometry"/>
+        </mxCell>
+        <mxCell id="supabase_label_zone" value="Backend / Database Zone" style="text;html=1;align=center;verticalAlign=top;fontSize=13;fontStyle=1;fontColor=#388E3C;" vertex="1" parent="1">
+          <mxGeometry x="555" y="550" width="190" height="22" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="supabase_logo" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAlign=center;image=https://www.vectorlogo.zone/logos/supabase/supabase-icon.svg;" vertex="1" parent="1">
+          <mxGeometry x="598" y="577" width="25" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="supabase_text" value="Supabase" style="text;html=1;align=left;fontSize=14;fontStyle=1;fontColor=#3ECF8E;" vertex="1" parent="1">
+          <mxGeometry x="630" y="578" width="100" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- Auth -->
+        <mxCell id="auth_box" value="🔐 &lt;b&gt;Auth&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#999&quot;&gt;email/password&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#81C784;strokeWidth=1;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="480" y="615" width="115" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- RLS -->
+        <mxCell id="rls_box" value="🛡️ &lt;b&gt;RLS&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#999&quot;&gt;店舗ごと分離&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#81C784;strokeWidth=1;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="600" y="615" width="115" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- UNIQUE Index -->
+        <mxCell id="unique_box" value="🔑 &lt;b&gt;UNIQUE INDEX&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#999&quot;&gt;重複防止&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#81C784;strokeWidth=1;fontSize=11;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="720" y="615" width="105" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- PostgreSQL -->
+        <mxCell id="db_box" value="🐘 &lt;b&gt;PostgreSQL&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#666&quot;&gt;stores / staff / girls&lt;br&gt;shifts / attendance&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#81C784;strokeWidth=1;fontSize=12;fontColor=#333333;size=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="685" width="180" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== Vercel → Supabase 矢印 ===== -->
+        <mxCell id="arrow_vercel_supabase" value="REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=2;fontSize=12;fontColor=#388E3C;exitX=0.7;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="vercel_zone" target="supabase_zone">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== Vercel ↔ LINE Platform 矢印 ===== -->
+        <mxCell id="arrow_vercel_line" value="Push API / Webhook" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#06C755;strokeWidth=2;fontSize=12;fontColor=#06C755;exitX=0.3;exitY=1;entryX=0.7;entryY=0;startArrow=classic;endArrow=classic;" edge="1" parent="1" source="vercel_zone" target="line_zone">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
