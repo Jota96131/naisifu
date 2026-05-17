@@ -78,7 +78,6 @@ export default function ShiftNewPage() {
       label:
         i === 0 ? "今日" : i === 1 ? "明日" : `${d.getMonth() + 1}/${d.getDate()}`,
       weekday: weekdays[d.getDay()],
-      isWeekend: d.getDay() === 0 || d.getDay() === 6,
     };
   });
 

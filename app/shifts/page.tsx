@@ -178,7 +178,7 @@ export default function ShiftsPage() {
                   </p>
                   <div className="text-right text-gray-500 text-sm">
                     <p>{shift.scheduled_date}</p>
-                    <p>{shift.scheduled_time}</p>
+                    <p>{shift.scheduled_time?.slice(0, 5) ?? ""}</p>
                   </div>
                 </div>
                 {shift.attendance[0] && (
