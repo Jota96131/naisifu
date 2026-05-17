@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 type Girl = {
   id: string;
@@ -18,6 +19,7 @@ export default function GirlsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<Girl | null>(null);
   const fetchGirls = async () => {
     const {
       data: { user },
@@ -121,20 +123,27 @@ export default function GirlsPage() {
     fetchGirls();
   };
 
-  const handleDelete = async (id: string) => {
+  const openDeleteDialog = (girl: Girl) => {
     if (deletingId) return;
-    if (!window.confirm("本当に削除しますか?")) return;
-    setDeletingId(id);
     setErrorMessage("");
+    setPendingDelete(girl);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete || deletingId) return;
+    const id = pendingDelete.id;
+    setDeletingId(id);
     const { error } = await supabase.from("girls").delete().eq("id", id);
 
     if (error) {
       console.error("削除エラー:", error.message);
       setErrorMessage("削除に失敗しました");
       setDeletingId(null);
+      setPendingDelete(null);
       return;
     }
     setDeletingId(null);
+    setPendingDelete(null);
     fetchGirls();
   };
 
@@ -187,8 +196,8 @@ export default function GirlsPage() {
               >
                 <span className="text-gray-800 font-medium">{girl.name}</span>
                 <button
-                  onClick={() => handleDelete(girl.id)}
-                  disabled={deletingId === girl.id}
+                  onClick={() => openDeleteDialog(girl)}
+                  disabled={Boolean(deletingId)}
                   className="text-red-600 hover:opacity-80 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deletingId === girl.id ? "削除中..." : "削除"}
@@ -198,6 +207,24 @@ export default function GirlsPage() {
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="女の子を削除"
+        message={
+          pendingDelete
+            ? `${pendingDelete.name} さんを削除します。\nよろしいですか？`
+            : ""
+        }
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        destructive
+        busy={Boolean(deletingId)}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (!deletingId) setPendingDelete(null);
+        }}
+      />
     </div>
   );
 }

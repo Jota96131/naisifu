@@ -149,8 +149,8 @@ describe("女の子一覧ページ", () => {
     });
   });
 
-  // ⑤ 削除テスト
-  test("削除ボタンを押すと削除される", async () => {
+  // ⑤ 削除テスト（カスタム確認ダイアログ経由）
+  test("削除ボタン→ダイアログの「削除する」で削除される", async () => {
     setupInitialMocks([
       { id: "1", name: "さくら" },
       { id: "2", name: "ひなた" },
@@ -163,28 +163,26 @@ describe("女の子一覧ページ", () => {
       expect(screen.getByText("ひなた")).toBeInTheDocument();
     });
 
-    // window.confirmが「OK」を返すようにモック
-    jest.spyOn(window, "confirm").mockReturnValue(true);
-
-    // 削除ボタン押下後のモックを追加セット
-    // handleDelete内: from("girls").delete().eq() → fetchGirls(getUser + staff + girls)
+    // 削除後のモックを追加セット
     mockGetUser.mockResolvedValue({
       data: { user: { email: "test@example.com" } },
     });
     mockFrom
-      .mockReturnValueOnce(mockGirlsDeleteChain()) // delete
-      .mockReturnValueOnce(mockStaffChain()) // fetchGirls内のstaff取得
+      .mockReturnValueOnce(mockGirlsDeleteChain())
+      .mockReturnValueOnce(mockStaffChain())
       .mockReturnValueOnce(
-        mockGirlsSelectChain([
-          { id: "2", name: "ひなた" }, // さくらが消えてる！
-        ]),
+        mockGirlsSelectChain([{ id: "2", name: "ひなた" }]),
       );
 
-    // 最初の削除ボタン（さくら）をクリック
-    const deleteButtons = screen.getAllByText("削除");
-    fireEvent.click(deleteButtons[0]);
+    // 最初の削除ボタン（さくら）でダイアログを開く
+    fireEvent.click(screen.getAllByText("削除")[0]);
 
-    // 削除後、さくらが消えてひなただけ残る
+    // ダイアログ内の「削除する」を押下
+    await waitFor(() => {
+      expect(screen.getByText("削除する")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText("削除する"));
+
     await waitFor(() => {
       expect(screen.queryByText("さくら")).not.toBeInTheDocument();
       expect(screen.getByText("ひなた")).toBeInTheDocument();
@@ -235,8 +233,8 @@ describe("女の子一覧ページ", () => {
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  // ⑨ 削除確認ダイアログ：OKを押したら削除される
-  test("削除ボタン→確認OKで削除が実行される", async () => {
+  // ⑩ 削除確認ダイアログ：キャンセルで削除されない
+  test("削除ボタン→ダイアログのキャンセルで削除されない", async () => {
     setupInitialMocks([
       { id: "1", name: "さくら" },
       { id: "2", name: "ひなた" },
@@ -248,59 +246,21 @@ describe("女の子一覧ページ", () => {
       expect(screen.getByText("さくら")).toBeInTheDocument();
     });
 
-    // window.confirmが「OK」を返すようにモック
-    jest.spyOn(window, "confirm").mockReturnValue(true);
-
-    // 削除後のモックをセット
-    mockGetUser.mockResolvedValue({
-      data: { user: { email: "test@example.com" } },
-    });
-    mockFrom
-      .mockReturnValueOnce(mockGirlsDeleteChain())
-      .mockReturnValueOnce(mockStaffChain())
-      .mockReturnValueOnce(
-        mockGirlsSelectChain([
-          { id: "2", name: "ひなた" },
-        ]),
-      );
-
-    const deleteButtons = screen.getAllByText("削除");
-    fireEvent.click(deleteButtons[0]);
+    fireEvent.click(screen.getAllByText("削除")[0]);
 
     await waitFor(() => {
-      expect(screen.queryByText("さくら")).not.toBeInTheDocument();
-      expect(screen.getByText("ひなた")).toBeInTheDocument();
-    });
-  });
-
-  // ⑩ 削除確認ダイアログ：キャンセルを押したら削除されない
-  test("削除ボタン→確認キャンセルで削除が実行されない", async () => {
-    setupInitialMocks([
-      { id: "1", name: "さくら" },
-      { id: "2", name: "ひなた" },
-    ]);
-
-    render(<GirlsPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText("さくら")).toBeInTheDocument();
+      expect(screen.getByText("削除する")).toBeInTheDocument();
     });
 
-    // window.confirmが「キャンセル」を返すようにモック
-    jest.spyOn(window, "confirm").mockReturnValue(false);
-
-    // mockFromをリセット（キャンセルしたら呼ばれないはず）
+    // ダイアログ表示後のDB呼び出しだけ計測
     mockFrom.mockClear();
 
-    const deleteButtons = screen.getAllByText("削除");
-    fireEvent.click(deleteButtons[0]);
+    fireEvent.click(screen.getByText("キャンセル"));
 
-    // キャンセルしたのでmockFromが呼ばれない＝削除が走らない
     expect(mockFrom).not.toHaveBeenCalled();
-
-    // 両方とも残ってる
     expect(screen.getByText("さくら")).toBeInTheDocument();
     expect(screen.getByText("ひなた")).toBeInTheDocument();
+    expect(screen.queryByText("削除する")).not.toBeInTheDocument();
   });
 
   // ⑪ エラーハンドリング：データ取得時のエラー
@@ -384,19 +344,20 @@ describe("女の子一覧ページ", () => {
       expect(screen.getByText("さくら")).toBeInTheDocument();
     });
 
-    jest.spyOn(window, "confirm").mockReturnValue(true);
-
     // 削除時のエラーをモック
     mockFrom.mockReturnValueOnce({
       delete: jest.fn().mockReturnValue({
         eq: jest.fn().mockResolvedValue({
-          error: { message: "削除エラー" }
+          error: { message: "削除エラー" },
         }),
       }),
     });
 
-    const deleteButtons = screen.getAllByText("削除");
-    fireEvent.click(deleteButtons[0]);
+    fireEvent.click(screen.getAllByText("削除")[0]);
+    await waitFor(() => {
+      expect(screen.getByText("削除する")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText("削除する"));
 
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith("削除エラー:", "削除エラー");
@@ -489,8 +450,6 @@ describe("女の子一覧ページ", () => {
       expect(screen.getByText("さくら")).toBeInTheDocument();
     });
 
-    jest.spyOn(window, "confirm").mockReturnValue(true);
-
     mockFrom.mockReturnValueOnce({
       delete: jest.fn().mockReturnValue({
         eq: jest.fn().mockResolvedValue({
@@ -499,8 +458,11 @@ describe("女の子一覧ページ", () => {
       }),
     });
 
-    const deleteButtons = screen.getAllByText("削除");
-    fireEvent.click(deleteButtons[0]);
+    fireEvent.click(screen.getAllByText("削除")[0]);
+    await waitFor(() => {
+      expect(screen.getByText("削除する")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText("削除する"));
 
     await waitFor(() => {
       expect(screen.getByText("削除に失敗しました")).toBeInTheDocument();

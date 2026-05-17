@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 type Girl = {
   id: string;
@@ -23,6 +24,7 @@ export default function ShiftEditPage() {
   const [deleting, setDeleting] = useState(false);
   const [timeSheetOpen, setTimeSheetOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchGirls = async () => {
@@ -121,15 +123,15 @@ export default function ShiftEditPage() {
     router.push("/shifts");
   };
 
-  const handleDelete = async () => {
+  const openDeleteDialog = () => {
     if (deleting || submitting) return;
-    setDeleting(true);
-
-    if (!window.confirm("本当に削除しますか?")) {
-      setDeleting(false);
-      return;
-    }
     setErrorMessage("");
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleting) return;
+    setDeleting(true);
 
     await supabase.from("attendance").delete().eq("shift_id", id);
 
@@ -139,6 +141,7 @@ export default function ShiftEditPage() {
       console.error("削除エラー:", error.message);
       setErrorMessage("削除に失敗しました");
       setDeleting(false);
+      setDeleteDialogOpen(false);
       return;
     }
     router.push("/shifts");
@@ -292,14 +295,14 @@ export default function ShiftEditPage() {
 
           <button
             onClick={handleSubmit}
-            disabled={!isFormValid || submitting}
+            disabled={!isFormValid || submitting || deleting}
             className="w-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white font-bold px-4 py-3 rounded-2xl hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "更新中..." : "更新"}
           </button>
           <button
-            onClick={handleDelete}
-            disabled={deleting}
+            onClick={openDeleteDialog}
+            disabled={deleting || submitting}
             className="w-full bg-white border border-red-300 text-red-600 font-bold px-4 py-3 rounded-2xl hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {deleting ? "削除中..." : "削除"}
@@ -351,6 +354,20 @@ export default function ShiftEditPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="シフトを削除"
+        message={"このシフトを削除します。\nよろしいですか？"}
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        destructive
+        busy={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (!deleting) setDeleteDialogOpen(false);
+        }}
+      />
     </div>
   );
 }

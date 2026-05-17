@@ -238,8 +238,8 @@ describe("シフト編集ページ", () => {
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  // 削除ボタン→確認OK→deleteが呼ばれる
-  test("削除ボタン→確認OKでdeleteが呼ばれる", async () => {
+  // 削除ボタン→ダイアログの「削除する」でdeleteが呼ばれる
+  test("削除ボタン→ダイアログの「削除する」でdeleteが呼ばれる", async () => {
     setupInitialMocks();
 
     render(<ShiftEditPage />);
@@ -249,8 +249,6 @@ describe("シフト編集ページ", () => {
         screen.getByRole("textbox", { name: /女の子/ }),
       ).toHaveTextContent("さくら");
     });
-
-    jest.spyOn(window, "confirm").mockReturnValue(true);
 
     mockFrom
       .mockReturnValueOnce(mockAttendanceDeleteChain())
@@ -259,14 +257,22 @@ describe("シフト編集ページ", () => {
     fireEvent.click(screen.getByRole("button", { name: "削除" }));
 
     await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "削除する" }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "削除する" }));
+
+    await waitFor(() => {
       expect(mockFrom).toHaveBeenCalledWith("attendance");
       expect(mockFrom).toHaveBeenCalledWith("shifts");
       expect(mockPush).toHaveBeenCalledWith("/shifts");
     });
   });
 
-  // 削除ボタン→確認キャンセル→deleteが呼ばれない
-  test("削除ボタン→確認キャンセルでdeleteが呼ばれない", async () => {
+  // 削除ボタン→ダイアログのキャンセルでdeleteが呼ばれない
+  test("削除ボタン→ダイアログのキャンセルでdeleteが呼ばれない", async () => {
     setupInitialMocks();
 
     render(<ShiftEditPage />);
@@ -277,14 +283,23 @@ describe("シフト編集ページ", () => {
       ).toHaveTextContent("さくら");
     });
 
-    jest.spyOn(window, "confirm").mockReturnValue(false);
+    fireEvent.click(screen.getByRole("button", { name: "削除" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "削除する" }),
+      ).toBeInTheDocument();
+    });
 
     mockFrom.mockClear();
 
-    fireEvent.click(screen.getByRole("button", { name: "削除" }));
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
 
     expect(mockFrom).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalledWith("/shifts");
+    expect(
+      screen.queryByRole("button", { name: "削除する" }),
+    ).not.toBeInTheDocument();
   });
 
   // 削除時に attendance → shifts の順で呼ばれる
@@ -298,8 +313,6 @@ describe("シフト編集ページ", () => {
         screen.getByRole("textbox", { name: /女の子/ }),
       ).toHaveTextContent("さくら");
     });
-
-    jest.spyOn(window, "confirm").mockReturnValue(true);
 
     const callOrder: string[] = [];
     mockFrom.mockImplementation((table: string) => {
@@ -315,6 +328,13 @@ describe("シフト編集ページ", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: "削除" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "削除する" }),
+      ).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "削除する" }));
 
     await waitFor(() => {
       expect(callOrder).toEqual(["attendance", "shifts"]);
