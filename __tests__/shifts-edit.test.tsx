@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ShiftEditPage from "@/app/shifts/[id]/edit/page";
 import { supabase } from "@/lib/supabase";
 
-// ① Supabaseをまるごと偽物に差し替え
 jest.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
@@ -12,14 +11,12 @@ jest.mock("@/lib/supabase", () => ({
   },
 }));
 
-// ② useRouter + useParamsを偽物に差し替え
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
   useParams: () => ({ id: "shift-1" }),
 }));
 
-// ③ 型キャスト
 const mockGetUser = supabase.auth.getUser as jest.Mock;
 const mockFrom = supabase.from as jest.Mock;
 
@@ -27,8 +24,6 @@ describe("シフト編集ページ", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
-
-  // === チェーンモックを作るヘルパー関数 ===
 
   const mockStaffChain = () => ({
     select: jest.fn().mockReturnValue({
@@ -56,7 +51,7 @@ describe("シフト編集ページ", () => {
     girl_id: string;
     scheduled_date: string;
     scheduled_time: string;
-  }) => ({
+  } | null) => ({
     select: jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnValue({
         single: jest.fn().mockResolvedValue({
@@ -84,8 +79,7 @@ describe("シフト編集ページ", () => {
     }),
   });
 
-  // 初期表示用の共通セットアップ
-  const setupInitialMocks = () => {
+  const setupInitialMocks = (overrides?: { scheduled_time?: string }) => {
     mockGetUser.mockResolvedValue({
       data: { user: { email: "test@example.com" } },
     });
@@ -103,43 +97,107 @@ describe("シフト編集ページ", () => {
           id: "shift-1",
           girl_id: "girl-1",
           scheduled_date: "2026-04-22",
-          scheduled_time: "20:00",
+          scheduled_time: overrides?.scheduled_time ?? "20:00:00",
         }),
       );
   };
 
-  // テスト① 既存データが取得されてフォームに表示される
+  // 既存データが取得されてフォームに表示される（女の子=読み取り専用 / 時間=ボタン表示）
   test("既存データが取得されてフォームに表示される", async () => {
     setupInitialMocks();
 
     render(<ShiftEditPage />);
 
     await waitFor(() => {
-      const select = screen.getByRole("combobox") as HTMLSelectElement;
-      expect(select.value).toBe("girl-1");
+      // 女の子は読み取り専用textboxとして表示される
+      const girlField = screen.getByRole("textbox", { name: /女の子/ });
+      expect(girlField).toHaveTextContent("さくら");
+      expect(girlField).toHaveAttribute("aria-readonly", "true");
 
-      const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
-      expect(dateInput.value).toBe("2026-04-22");
-
-      const timeInput = document.querySelector('input[type="time"]') as HTMLInputElement;
-      expect(timeInput.value).toBe("20:00");
+      // 時間はボタン化されており、HH:MM形式で表示
+      expect(
+        screen.getByRole("button", { name: /出勤予定時間を選択/ }),
+      ).toHaveTextContent("20:00");
     });
   });
 
-  // テスト② 更新ボタンを押すとupdateが呼ばれる
+  // 秒付きで返ってきた scheduled_time が HH:MM に整形される
+  test("DBから返るHH:MM:SSの時刻はHH:MMに整形して表示される", async () => {
+    setupInitialMocks({ scheduled_time: "19:45:00" });
+
+    render(<ShiftEditPage />);
+
+    await waitFor(() => {
+      const timeBtn = screen.getByRole("button", { name: /出勤予定時間を選択/ });
+      expect(timeBtn).toHaveTextContent("19:45");
+      expect(timeBtn).not.toHaveTextContent("19:45:00");
+    });
+  });
+
+  // 女の子のセレクトボックスは存在せず、変更できない
+  test("女の子フィールドは読み取り専用で、選択肢を切り替えられない", async () => {
+    setupInitialMocks();
+
+    render(<ShiftEditPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("textbox", { name: /女の子/ }),
+      ).toBeInTheDocument();
+    });
+
+    // 旧UIの<select>は存在しない
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    // 「変更不可」の補助ラベルが表示されている
+    expect(screen.getByText("変更不可")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /他の女の子に変更したい場合は、このシフトを削除して新規登録してください/,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  // ボトムシートで時間を変更できる
+  test("時間選択ボタンを押すとボトムシートが開き、選んだ時間が反映される", async () => {
+    setupInitialMocks();
+
+    render(<ShiftEditPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /出勤予定時間を選択/ }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /出勤予定時間を選択/ }),
+    );
+
+    // シート内の「19:30」を選択（timeOptionsは19:00-22:00の15分刻み）
+    fireEvent.click(screen.getByRole("button", { name: "19:30" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /出勤予定時間を選択/ }),
+      ).toHaveTextContent("19:30");
+    });
+  });
+
+  // 更新ボタンを押すとupdateが呼ばれる
   test("更新ボタンを押すとupdateが呼ばれる", async () => {
     setupInitialMocks();
 
     render(<ShiftEditPage />);
 
     await waitFor(() => {
-      const select = screen.getByRole("combobox") as HTMLSelectElement;
-      expect(select.value).toBe("girl-1");
+      expect(
+        screen.getByRole("textbox", { name: /女の子/ }),
+      ).toHaveTextContent("さくら");
     });
 
     mockFrom.mockReturnValueOnce(mockShiftsUpdateChain());
 
-    fireEvent.click(screen.getByText("更新"));
+    fireEvent.click(screen.getByRole("button", { name: "更新" }));
 
     await waitFor(() => {
       expect(mockFrom).toHaveBeenCalledWith("shifts");
@@ -147,8 +205,8 @@ describe("シフト編集ページ", () => {
     });
   });
 
-  // テスト③ バリデーション：未入力で更新してもupdateが呼ばれない
-  test("未入力で更新してもupdateが呼ばれない", async () => {
+  // バリデーション：必須項目が空ならupdateが呼ばれない
+  test("必須項目が空のまま更新してもupdateが呼ばれない", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { email: "test@example.com" } },
     });
@@ -156,10 +214,7 @@ describe("シフト編集ページ", () => {
     mockFrom
       .mockReturnValueOnce(mockStaffChain())
       .mockReturnValueOnce(
-        mockGirlsSelectChain([
-          { id: "girl-1", name: "さくら" },
-          { id: "girl-2", name: "ひなた" },
-        ]),
+        mockGirlsSelectChain([{ id: "girl-1", name: "さくら" }]),
       )
       .mockReturnValueOnce(
         mockShiftsSingleChain({
@@ -173,25 +228,26 @@ describe("シフト編集ページ", () => {
     render(<ShiftEditPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("さくら")).toBeInTheDocument();
+      expect(screen.getByText("シフト編集")).toBeInTheDocument();
     });
 
     mockFrom.mockClear();
 
-    fireEvent.click(screen.getByText("更新"));
+    fireEvent.click(screen.getByRole("button", { name: "更新" }));
 
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  // テスト④ 削除ボタン→確認OK→deleteが呼ばれる
+  // 削除ボタン→確認OK→deleteが呼ばれる
   test("削除ボタン→確認OKでdeleteが呼ばれる", async () => {
     setupInitialMocks();
 
     render(<ShiftEditPage />);
 
     await waitFor(() => {
-      const select = screen.getByRole("combobox") as HTMLSelectElement;
-      expect(select.value).toBe("girl-1");
+      expect(
+        screen.getByRole("textbox", { name: /女の子/ }),
+      ).toHaveTextContent("さくら");
     });
 
     jest.spyOn(window, "confirm").mockReturnValue(true);
@@ -200,7 +256,7 @@ describe("シフト編集ページ", () => {
       .mockReturnValueOnce(mockAttendanceDeleteChain())
       .mockReturnValueOnce(mockShiftsDeleteChain());
 
-    fireEvent.click(screen.getByText("削除"));
+    fireEvent.click(screen.getByRole("button", { name: "削除" }));
 
     await waitFor(() => {
       expect(mockFrom).toHaveBeenCalledWith("attendance");
@@ -209,36 +265,38 @@ describe("シフト編集ページ", () => {
     });
   });
 
-  // テスト⑤ 削除ボタン→確認キャンセル→deleteが呼ばれない
+  // 削除ボタン→確認キャンセル→deleteが呼ばれない
   test("削除ボタン→確認キャンセルでdeleteが呼ばれない", async () => {
     setupInitialMocks();
 
     render(<ShiftEditPage />);
 
     await waitFor(() => {
-      const select = screen.getByRole("combobox") as HTMLSelectElement;
-      expect(select.value).toBe("girl-1");
+      expect(
+        screen.getByRole("textbox", { name: /女の子/ }),
+      ).toHaveTextContent("さくら");
     });
 
     jest.spyOn(window, "confirm").mockReturnValue(false);
 
     mockFrom.mockClear();
 
-    fireEvent.click(screen.getByText("削除"));
+    fireEvent.click(screen.getByRole("button", { name: "削除" }));
 
     expect(mockFrom).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalledWith("/shifts");
   });
 
-  // テスト⑥ 削除時にattendanceが先に削除されてからshiftsが削除される
+  // 削除時に attendance → shifts の順で呼ばれる
   test("削除時にattendanceが先に削除されてからshiftsが削除される", async () => {
     setupInitialMocks();
 
     render(<ShiftEditPage />);
 
     await waitFor(() => {
-      const select = screen.getByRole("combobox") as HTMLSelectElement;
-      expect(select.value).toBe("girl-1");
+      expect(
+        screen.getByRole("textbox", { name: /女の子/ }),
+      ).toHaveTextContent("さくら");
     });
 
     jest.spyOn(window, "confirm").mockReturnValue(true);
@@ -246,14 +304,7 @@ describe("シフト編集ページ", () => {
     const callOrder: string[] = [];
     mockFrom.mockImplementation((table: string) => {
       callOrder.push(table);
-      if (table === "attendance") {
-        return {
-          delete: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: null }),
-          }),
-        };
-      }
-      if (table === "shifts") {
+      if (table === "attendance" || table === "shifts") {
         return {
           delete: jest.fn().mockReturnValue({
             eq: jest.fn().mockResolvedValue({ error: null }),
@@ -263,7 +314,7 @@ describe("シフト編集ページ", () => {
       return {};
     });
 
-    fireEvent.click(screen.getByText("削除"));
+    fireEvent.click(screen.getByRole("button", { name: "削除" }));
 
     await waitFor(() => {
       expect(callOrder).toEqual(["attendance", "shifts"]);
@@ -286,6 +337,26 @@ describe("シフト編集ページ", () => {
         }),
       }),
     });
+
+    render(<ShiftEditPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("シフト編集")).toBeInTheDocument();
+    });
+  });
+
+  // 防御：shiftDataがnullでもクラッシュしない
+  test("該当シフトが存在しなくてもクラッシュしない", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: "test@example.com" } },
+    });
+
+    mockFrom
+      .mockReturnValueOnce(mockStaffChain())
+      .mockReturnValueOnce(
+        mockGirlsSelectChain([{ id: "girl-1", name: "さくら" }]),
+      )
+      .mockReturnValueOnce(mockShiftsSingleChain(null));
 
     render(<ShiftEditPage />);
 

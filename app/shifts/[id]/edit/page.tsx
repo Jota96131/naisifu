@@ -13,7 +13,7 @@ export default function ShiftEditPage() {
   const router = useRouter();
   const params = useParams();
 
-  const id = params.id;
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [girls, setGirls] = useState<Girl[]>([]);
   const [selectedGirlId, setSelectedGirlId] = useState("");
@@ -55,9 +55,10 @@ export default function ShiftEditPage() {
         return;
       }
       setGirls(data ?? []);
-      setSelectedGirlId(shiftData.girl_id);
-      setScheduledDate(shiftData.scheduled_date);
-      setScheduledTime(shiftData.scheduled_time.slice(0, 5));
+      if (!shiftData) return;
+      setSelectedGirlId(shiftData.girl_id ?? "");
+      setScheduledDate(shiftData.scheduled_date ?? "");
+      setScheduledTime(shiftData.scheduled_time?.slice(0, 5) ?? "");
     };
     fetchGirls();
   }, [id]);
@@ -88,7 +89,6 @@ export default function ShiftEditPage() {
       label:
         i === 0 ? "今日" : i === 1 ? "明日" : `${d.getMonth() + 1}/${d.getDate()}`,
       weekday: weekdays[d.getDay()],
-      isWeekend: d.getDay() === 0 || d.getDay() === 6,
     };
   });
 
@@ -122,10 +122,13 @@ export default function ShiftEditPage() {
   };
 
   const handleDelete = async () => {
-    if (deleting) return;
-    if (!window.confirm("本当に削除しますか?")) return;
-
+    if (deleting || submitting) return;
     setDeleting(true);
+
+    if (!window.confirm("本当に削除しますか?")) {
+      setDeleting(false);
+      return;
+    }
     setErrorMessage("");
 
     await supabase.from("attendance").delete().eq("shift_id", id);
@@ -180,8 +183,10 @@ export default function ShiftEditPage() {
           <div>
             <label className={labelClass}>女の子</label>
             <div
-              className={`${inputClass} bg-gray-50 text-gray-800 cursor-not-allowed flex items-center justify-between`}
+              role="textbox"
               aria-readonly="true"
+              aria-label="女の子（変更不可）"
+              className={`${inputClass} bg-gray-50 text-gray-800 cursor-not-allowed flex items-center justify-between`}
             >
               <span>{selectedGirl ? selectedGirl.name : "—"}</span>
               <span className="text-xs text-gray-400">変更不可</span>
